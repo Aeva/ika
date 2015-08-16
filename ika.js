@@ -37,6 +37,51 @@ var ika = {
         "misty.frag",
         "cube.jta",
     ],
+    "levels" : {},
+};
+
+
+ika.levels.start = "" +
+    "#################\n" + 
+    "#               #\n" +
+    "#               #\n" + 
+    "#     ## ##     #\n" + 
+    "#    #  #  #    #\n" +
+    "#   #       #   #\n" +
+    "#   #       #   #\n" + 
+    "#    #     #    #\n" + 
+    "#     #   #     #\n" + 
+    "#      # #      #\n" + 
+    "#       #       #\n" + 
+    "#               #\n" +
+    "#               #\n" + 
+    "#################\n";
+
+
+ika.load_level = function (level_name) {
+    var cube_model = please.access("cube.jta");
+    var radius = 10;
+
+    var lines = ika.levels[level_name].trim().split("\n");
+    var width = lines[0].length;
+    var height = lines.length;
+
+    var grid = 2;
+    var offset_x = (width-1)/2;
+    var offset_y = (height-1)/2;
+
+    for (var y=0; y<height; y+=1) {
+        for (var x=0; x<width; x+=1) {
+            var cube = cube_model.instance();
+            var slot = lines[height-1-y][x];
+            if (slot === "#") {
+                cube.location = [(x-offset_x)*grid, (y-offset_y)*grid, 0];
+                cube.shader.color = [1, 0, 0];
+                cube.use_manual_cache_invalidation();
+                ika.cubes.add(cube);
+            }
+        }
+    }
 };
 
 
@@ -96,7 +141,7 @@ addEventListener("mgrl_media_ready", please.once(function () {
     // add a camera object to the scene graph
     var camera = new please.CameraNode();
     camera.look_at = [0.0, 0.0, 0.0];
-    camera.location = [0.0, -20.0, 15.0];
+    camera.location = [0.0, -30.0, 30.0];
     graph.add(camera);
     camera.activate();
 
@@ -104,19 +149,20 @@ addEventListener("mgrl_media_ready", please.once(function () {
     var prog = please.glsl("misty_shader", "simple.vert", "misty.frag");
     prog.activate();
 
-    // add some cubes
+    // add the handle for level assets
     ika.cubes = new please.GraphNode();
     graph.add(ika.cubes);
+
+    // load some cubes
+    ika.load_level("start");
+
+    // add a center reference for now
     var cube_model = please.access("cube.jta");
-    var radius = 10
-    for (var y=radius*-1; y+=2; y<=radius) {
-        for (var x=radius*-1; x+=2; x<=radius) {
-            var cube = cube_model.instance();
-            cube.location = [x, y, 0];
-            cube.shader.color = [1, 0, 0];
-            ika.cubes.add(cube);
-        }
-    }
+    var cube = cube_model.instance();
+    cube.location = [0, 0, 1];
+    cube.shader.color = [0, 0, 0];
+    graph.add(cube);
+    camera.look_at = cube;
 
     // Add a renderer using the default shader.
     ika.diffuse_pass = new please.RenderNode("misty_shader");
