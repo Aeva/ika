@@ -34,6 +34,7 @@ var ika = {
     "viewport" : null,
     "manifest" : [
         // add art assets here
+        "misty.frag",
         "cube.jta",
     ],
 };
@@ -45,6 +46,10 @@ addEventListener("load", function setup () {
     please.gl.set_context("gl_canvas", {
         antialias : false,
     });
+
+    // These should be defaults in m.grl but aren't currently :P
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LEQUAL);
 
     // Define where m.grl is to find various assets when using the
     // load methed.
@@ -90,15 +95,36 @@ addEventListener("mgrl_media_ready", please.once(function () {
 
     // add a camera object to the scene graph
     var camera = new please.CameraNode();
-    camera.look_at = [0.0, 0.0, 5.0];
-    camera.location = [0.0, -14.0, 8.0];
+    camera.look_at = [0.0, 0.0, 0.0];
+    camera.location = [0.0, -20.0, 15.0];
     graph.add(camera);
     camera.activate();
 
+    // define this before the cubes as a temporary bugfix :P
+    var prog = please.glsl("misty_shader", "simple.vert", "misty.frag");
+    prog.activate();
+
+    // add some cubes
+    ika.cubes = new please.GraphNode();
+    graph.add(ika.cubes);
+    var cube_model = please.access("cube.jta");
+    var radius = 10
+    for (var y=radius*-1; y+=2; y<=radius) {
+        for (var x=radius*-1; x+=2; x<=radius) {
+            var cube = cube_model.instance();
+            cube.location = [x, y, 0];
+            cube.shader.color = [1, 0, 0];
+            ika.cubes.add(cube);
+        }
+    }
+
     // Add a renderer using the default shader.
-    var diffuse_pass = new please.RenderNode("default");
-    diffuse_pass.graph = graph;
-    
+    ika.diffuse_pass = new please.RenderNode("misty_shader");
+    ika.diffuse_pass.graph = graph;
+    var gloom = 0.175;
+    ika.diffuse_pass.clear_color = [gloom, gloom, gloom, 1];
+
+        
     // Transition from the loading screen prefab to our renderer
-    ika.viewport.raise_curtains(diffuse_pass);
+    ika.viewport.raise_curtains(ika.diffuse_pass);
 }));
