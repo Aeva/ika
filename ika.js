@@ -34,6 +34,7 @@ var ika = {
     "viewport" : null,
     "manifest" : [
         // add art assets here
+        "cube.jta",
     ],
 };
 
@@ -99,5 +100,5 @@ addEventListener("mgrl_media_ready", please.once(function () {
     diffuse_pass.graph = graph;
     
     // Transition from the loading screen prefab to our renderer
-    ika.viewport.raise_curtains(splice_pass);
+    ika.viewport.raise_curtains(diffuse_pass);
 }));
