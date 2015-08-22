@@ -53,6 +53,14 @@ var ika = {
         "down" : false,
         "right" : false,
     },
+
+    "samples" : {
+        "upon" : null,
+        "ahead" : null,
+        "behind" : null,
+    },
+
+    "mode" : "human",
 };
 
 
@@ -130,15 +138,42 @@ ika.bump = function () {
     var active = false;
     if (!ika.input.left ^ !ika.input.right) {
         var dir = ika.input.left ? 1 : -1;
+        ika.player.rotation_z += 3.5 * dir;
         active = true;
-        ika.player.rotation_z += 5 * dir;
     }
-    else if (!ika.input.up ^ !ika.input.down) {
-        var dir = ika.input.up ? 1 : -1;
+    if (!ika.input.up ^ !ika.input.down) {
+        var dir = ika.input.up ? "ahead" : "behind";
+        var target = ika.player[dir];
+        if ((ika.mode === "human" && ika.samples[dir] !== "wall") || ika.mode === "monster") {
+            ika.player.location = target;
+        }
+        if (ika.mode === "human" && ika.samples.upon === "haze") {
+            ika.mode = "monster";
+        }
+        else if (ika.mode === "monster" && ika.samples.upon === "floor") {
+            ika.mode = "human";
+        }
+        
         active = true;
     }
     if (active) {
         window.setTimeout(ika.bump, 0);
+    }
+};
+
+
+ika.px_type = function (color) {
+    if (color[0] === 255 && color[2] === 255) {
+        return "floor";
+    }
+    else if (color[0] === 255 && color[2] === 0) {
+        return "haze";
+    }
+    else if (color[0] === 0 && color[2] === 255) {
+        return "flux";
+    }
+    else if (color[0] === 0 && color[2] === 0) {
+        return "wall";
     }
 };
 
@@ -199,10 +234,21 @@ addEventListener("mgrl_media_ready", please.once(function () {
 
     // add a handle for our player
     var player = ika.player = new please.GraphNode();
-    player.rotation_z = 10;
+    please.make_animatable(player, "ahead");
+    please.make_animatable(player, "behind");
     graph.add(player);
     player.location_x = 7;
     player.rotation_z = 180;
+    player.ahead = function () {
+        var mat = mat4.create();
+        mat4.translate(mat, this.shader.world_matrix, [0, -.6, 0]);
+        return vec3.transformMat4(vec3.create(), vec3.create(), mat);
+    };
+    player.behind = function () {
+        var mat = mat4.create();
+        mat4.translate(mat, this.shader.world_matrix, [0, .3, 0]);
+        return vec3.transformMat4(vec3.create(), vec3.create(), mat);
+    };
     
     player.add(please.access("psycho.jta").instance());
 
@@ -238,6 +284,8 @@ addEventListener("mgrl_media_ready", please.once(function () {
     var collision_graph = new please.SceneGraph();
     var ortho = ika.ortho = new please.CameraNode();
     ortho.set_orthographic();
+    ortho.width = 128;
+    ortho.height = 128;
     ortho.look_at = player;
     ortho.location = function () {
         return [player.location_x, player.location_y, 40];
@@ -286,18 +334,26 @@ addEventListener("mgrl_media_ready", please.once(function () {
     graph.add(light);
 
     light.location_x = please.oscillating_driver(10, -10, 5000);
-    light.location_y = please.oscillating_driver(-10, -15, 2500);
+    light.location_y = please.oscillating_driver(-15, -20, 2500);
 
 
 
 
-    // add a depth texture pass
+    // make sure that the player object nor any of its children have a
+    // shadow add a depth texture pass
+    player.propogate(function (node) {
+        node.no_shadow = true;
+    });
+    
     please.glsl("depth_shader", "simple.vert", "depth.frag");
     ika.depth_pass = new please.RenderNode("depth_shader");
     ika.depth_pass.graph = graph;
     ika.depth_pass.render = function () {
         light.activate();
         this.graph.draw();
+        // this.graph.draw(function (node) {
+        //     return !!node.no_shadow;
+        // });
         camera.activate();
     };
 
@@ -342,6 +398,19 @@ addEventListener("mgrl_media_ready", please.once(function () {
     ika.collision_pass.graph = collision_graph;
     ika.collision_pass.clear_color = [1, 0, 0, 1];
     add_lighting(ika.collision_pass);
+
+
+    // register a render pass with the scheduler
+    please.pipeline.add(5, "project/collision", function () {
+        var canvas = please.gl.canvas;
+        please.render(ika.collision_pass);
+
+        ika.samples.upon = ika.px_type(please.gl.pick(0.5, 0.5));
+        ika.samples.ahead = ika.px_type(please.gl.pick(0.5, 0.4));
+        ika.samples.behind = ika.px_type(please.gl.pick(0.5, 0.6));
+        
+    }).skip_when(function () { return ika.viewport === null; });
+
     
     // debug
     var pip = new please.PictureInPicture();
@@ -350,7 +419,7 @@ addEventListener("mgrl_media_ready", please.once(function () {
     
     
     // Transition from the loading screen prefab to our renderer
-    ika.viewport.raise_curtains(pip);
+    ika.viewport.raise_curtains(ika.combined);
 }));
 
 
