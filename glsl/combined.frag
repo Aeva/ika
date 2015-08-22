@@ -13,6 +13,7 @@ varying vec2 local_tcoords;
 varying vec3 world_position;
 varying vec3 screen_position;
 
+uniform float mystery_scalar;
 uniform mat4 light_projection_matrix;
 uniform mat4 light_view_matrix;
 uniform sampler2D depth_texture;
@@ -34,7 +35,7 @@ float illumination () {
 
   float bias = 0.001;
   float scale = 40.0;
-  //float scale = 90.0;
+  scale = mystery_scalar;
   float light_depth_1 = texture2D(depth_texture, light_uv).r;
   float light_depth_2 = clamp(length(position)/scale, 0.0, 1.0);
   float illuminated = step(light_depth_2, light_depth_1 + bias);

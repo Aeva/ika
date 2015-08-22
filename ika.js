@@ -132,15 +132,14 @@ addEventListener("mgrl_media_ready", please.once(function () {
 
     // light test
     var light = ika.light = new SpotLightNode();
-    light.location = [-10, 10, 20];
+    light.location = [10, -10, 15];
     light.look_at = [0, 0, 0];
-    //light.fov = 45;
+    light.fov = 60;
     graph.add(light);
 
-    // debug
-    light.near = 10;
-    light.location_x = please.oscillating_driver(-20, 20, 5000);
-
+    light.location_x = please.oscillating_driver(10, -10, 5000);
+    light.location_y = please.oscillating_driver(-10, -15, 2500);
+    
 
     // add a depth texture pass
     var prog = please.glsl("depth_shader", "simple.vert", "depth.frag");
@@ -154,9 +153,9 @@ addEventListener("mgrl_media_ready", please.once(function () {
 
     
     // Add a renderer using the default shader.
-    //ika.diffuse_pass = new please.RenderNode("misty_shader");
     ika.diffuse_pass = new please.RenderNode("combined");
     ika.diffuse_pass.shader.depth_texture = ika.depth_pass;
+    ika.diffuse_pass.shader.mystery_scalar = function () { return (light.far - light.near) / 2; };
     ika.diffuse_pass.shader.light_view_matrix = function () { return light.view_matrix; };
     ika.diffuse_pass.shader.light_projection_matrix = function () { return light.projection_matrix; };
     
@@ -181,5 +180,6 @@ var SpotLightNode = function () {
     please.CameraNode.call(this);
     this.width = 1;
     this.height = 1;
+    this.near = 10;
 };
 SpotLightNode.prototype = Object.create(please.CameraNode.prototype);
