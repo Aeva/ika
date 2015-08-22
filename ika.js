@@ -38,11 +38,63 @@ var ika = {
         "test_level.jta",
         "test_level_bake.png",
         "haze.png",
+        "psycho_bake.png",
+        "psycho.jta",
 
         "depth.frag",
         "bitmask.frag",
+        "collision.frag",
         "illumination.frag",
     ],
+};
+
+
+var load_room = function (asset) {
+    var model = please.access(asset).instance();
+    var visible = [];
+    var display = new please.GraphNode();
+    var collision = new please.GraphNode();
+
+    please.gl.get_program("collision_shader").activate();
+    var cache = [];
+    for (var i=0; i<model.children.length; i+=1) {
+        cache.push(model.children[i]);
+    }
+    for (var i=0; i<cache.length; i+=1) {
+        var child = cache[i];
+        if (child.node_name.startsWith("wall")) {
+            child.__regen_glsl_bindings();
+            child.shader.color = [0,0,0];
+            collision.add(child);
+        }
+        else if (child.node_name.startsWith("floor")) {
+            child.__regen_glsl_bindings();
+            child.shader.color = [1,1,1];
+            collision.add(child);
+        }
+        else {
+            visible.push(child);
+        }
+    }
+    if (visible.length === 1) {
+        display = visible[0];
+    }
+    else {
+        for (var i=0; i<visible.length; i+=1) {
+            display.add(visible[i]);
+        }
+    }
+
+    collision.location = function () { return display.location; };
+    collision.rotation = function () { return display.rotation; };
+    collision.scale = function () { return display.scale; };
+
+    please.gl.get_program("default").activate();
+    
+    return {
+        "display" : display,
+        "collision" : collision,
+    };
 };
 
 
@@ -96,15 +148,51 @@ addEventListener("mgrl_media_ready", please.once(function () {
     // the game, the callback is wrapped in the "please.once"
     // function, to ensure that it is only called once.
     
-    // initialize a scene graph object
+    // initialize a scene graph object for visible objects
     var graph = new please.SceneGraph();
+
+
+    // add a handle for our player
+    var player = ika.player = new please.GraphNode();
+    player.rotation_z = 10;
+    graph.add(player);
+    player.location_x = 7;
+    player.rotation_z = 180;
+    
+    player.add(please.access("psycho.jta").instance());
+
 
     // add a camera object to the scene graph
     var camera = ika.camera = new please.CameraNode();
-    camera.look_at = [0.0, 0.0, 0.0];
-    camera.location = [0.0, -30.0, 30.0];
+    camera.look_at = function () {
+        return [player.location_x, player.location_y, player.location_z + 2];
+    };
+    camera.location = [0.0, -9.7, 20.7];
+    camera.fov = 80;
+
     graph.add(camera);
     camera.activate();
+
+
+
+    // initialize a scene graph for collision geometry
+    var collision_graph = new please.SceneGraph();
+    var ortho = ika.ortho = new please.CameraNode();
+    ortho.set_orthographic();
+    ortho.look_at = player;
+    ortho.location = function () {
+        return [player.location_x, player.location_y, 40];
+    };
+    ortho.up_vector = function () {
+        var rotation = mat4.rotateZ(
+            mat4.create(), mat4.create(), please.radians(player.rotation_z));
+        return vec3.transformMat4(vec3.create(), [0, -1, 0], rotation);
+    };
+    collision_graph.add(ortho);
+    ortho.activate();
+
+    // shader for collision detection
+    var prog = please.glsl("collision_shader", "simple.vert", "collision.frag");
     
 
     // define this before the cubes as a temporary bugfix :P
@@ -125,11 +213,13 @@ addEventListener("mgrl_media_ready", please.once(function () {
     graph.add(cube);
     camera.look_at = cube;
 
-    // test level thing
-    var bg_model = please.access("test_level.jta");
-    var test = bg_model.instance();
-    graph.add(test);
 
+    // test level thing
+    var room_data = load_room("test_level.jta");
+    graph.add(room_data.display);
+    collision_graph.add(room_data.collision);
+
+    
     // light test
     var light = ika.light = new SpotLightNode();
     light.location = [10, -10, 15];
@@ -153,23 +243,28 @@ addEventListener("mgrl_media_ready", please.once(function () {
         camera.activate();
     };
 
+
+    var add_lighting = function(node) {
+        node.shader.depth_texture = ika.depth_pass;
+        node.shader.mystery_scalar = function () {
+            return (light.far - light.near) / 2;
+        };
+        node.shader.light_view_matrix = function () {
+            return light.view_matrix;
+        };
+        node.shader.light_projection_matrix = function () {
+            return light.projection_matrix;
+        };
+    };
+
     
     // Add a renderer using the default shader.
     please.glsl("light_mask", "simple.vert", "illumination.frag");
     ika.light_pass = new please.RenderNode("light_mask");
-    ika.light_pass.shader.depth_texture = ika.depth_pass;
-    ika.light_pass.shader.mystery_scalar = function () {
-        return (light.far - light.near) / 2;
-    };
-    ika.light_pass.shader.light_view_matrix = function () {
-        return light.view_matrix;
-    };
-    ika.light_pass.shader.light_projection_matrix = function () {
-        return light.projection_matrix;
-    };
     ika.light_pass.clear_color = [0,0,0,1];
     ika.light_pass.graph = graph;
-
+    add_lighting(ika.light_pass);
+    
 
     // diffuse pass
     ika.diffuse_pass = new please.RenderNode("default");
@@ -183,11 +278,17 @@ addEventListener("mgrl_media_ready", please.once(function () {
     ika.combined.shader.fg_texture = ika.diffuse_pass;
     ika.combined.shader.bg_texture = "haze.png";
 
+
+    // collision pass
+    ika.collision_pass = new please.RenderNode("collision_shader");
+    ika.collision_pass.graph = collision_graph;
+    ika.collision_pass.clear_color = [1, 0, 0, 1];
+    add_lighting(ika.collision_pass);
     
     // debug
     var pip = new please.PictureInPicture();
     pip.shader.main_texture = ika.combined;
-    pip.shader.pip_texture = ika.depth_pass;
+    pip.shader.pip_texture = ika.collision_pass; //ika.depth_pass;
     
     
     // Transition from the loading screen prefab to our renderer

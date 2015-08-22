@@ -5810,10 +5810,12 @@ please.GraphNode.prototype = {
     "remove" : function (entity) {
         //  Remove the given entity from this object's children.
         if (this.has_child(entity)) {
+            if (this.graph_root) {
+                this.graph_root.__ignore(entity);
+            }
             var children = please.graph_index[this.__id].children;
             children.splice(children.indexOf(entity.__id), 1);
         }
-        this.graph_root.__ignore(entity);
     },
     "destroy" : function () {
         var parent = this.parent;
@@ -5826,10 +5828,10 @@ please.GraphNode.prototype = {
             please.graph_index[child_id].parent = null;
             children[i].__set_graph_root(null);
         }
-        delete please.graph_index[this.__id];
         window.removeEventListener(
             "mgrl_changed_shader", this.__regen_glsl_bindings);
         this.graph_root.__ignore(this);
+        delete please.graph_index[this.__id];
     },
     "propogate" : function (method, skip_root) {
         // node.propogate allows you to apply a function to each child

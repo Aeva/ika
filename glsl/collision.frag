@@ -1,7 +1,8 @@
-
 precision mediump float;
 
+uniform vec3 color;
 varying vec3 world_position;
+uniform vec4 mgrl_clear_color;
 uniform float mystery_scalar;
 uniform mat4 light_projection_matrix;
 uniform mat4 light_view_matrix;
@@ -35,5 +36,16 @@ float illumination () {
 
 void main(void) {
   float lit = illumination();
-  gl_FragColor = vec4(lit, lit, lit, 1.0);
+  if (lit < 0.5) {
+    if (color == vec3(1.0, 1.0, 1.0)) {
+      gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+    }
+    else {
+      gl_FragColor = mgrl_clear_color;
+    }
+  }
+  else {
+    gl_FragColor = vec4(color, 1.0);
+  }
+  
 }
