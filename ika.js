@@ -46,10 +46,17 @@ var ika = {
         "collision.frag",
         "illumination.frag",
     ],
+
+    "input" : {
+        "up" : false,
+        "left" : false,
+        "down" : false,
+        "right" : false,
+    },
 };
 
 
-var load_room = function (asset) {
+ika.load_room = function (asset) {
     var model = please.access(asset).instance();
     var visible = [];
     var display = new please.GraphNode();
@@ -95,6 +102,44 @@ var load_room = function (asset) {
         "display" : display,
         "collision" : collision,
     };
+};
+
+
+ika.add_input_handler = function () {
+    var key_handler = function (state, key) {
+        // arrow key handler
+        if (state === "cancel") {
+            ika.input[key] = false;
+        }
+        else if (state === "press" && ika.input[key] === false) {
+            ika.input[key] = performance.now();
+            ika.bump();
+        }
+    };
+
+    please.keys.enable();
+    please.keys.connect("up", key_handler);
+    please.keys.connect("left", key_handler);
+    please.keys.connect("down", key_handler);
+    please.keys.connect("right", key_handler);
+};
+
+
+// request the character be moved
+ika.bump = function () {
+    var active = false;
+    if (!ika.input.left ^ !ika.input.right) {
+        var dir = ika.input.left ? 1 : -1;
+        active = true;
+        ika.player.rotation_z += 5 * dir;
+    }
+    else if (!ika.input.up ^ !ika.input.down) {
+        var dir = ika.input.up ? 1 : -1;
+        active = true;
+    }
+    if (active) {
+        window.setTimeout(ika.bump, 0);
+    }
 };
 
 
@@ -161,6 +206,11 @@ addEventListener("mgrl_media_ready", please.once(function () {
     
     player.add(please.access("psycho.jta").instance());
 
+
+    // connect the input handler
+    ika.add_input_handler();
+
+    
     // add a camera object to the scene graph
     var camera = ika.camera = new please.CameraNode();
     camera.look_at = function () {
@@ -223,7 +273,7 @@ addEventListener("mgrl_media_ready", please.once(function () {
 
 
     // test level thing
-    var room_data = load_room("test_level.jta");
+    var room_data = ika.load_room("test_level.jta");
     graph.add(room_data.display);
     collision_graph.add(room_data.collision);
 
