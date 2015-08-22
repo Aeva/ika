@@ -34,54 +34,15 @@ var ika = {
     "viewport" : null,
     "manifest" : [
         // add art assets here
-        "misty.frag",
         "cube.jta",
+        "test_level.jta",
+        "test_level_bake.png",
+
+        "misty.frag",
+        "depth.frag",
+        "combined.frag",
+        "lightmask.glsl",
     ],
-    "levels" : {},
-};
-
-
-ika.levels.start = "" +
-    "#################\n" + 
-    "#               #\n" +
-    "#               #\n" + 
-    "#     ## ##     #\n" + 
-    "#    #  #  #    #\n" +
-    "#   #       #   #\n" +
-    "#   #       #   #\n" + 
-    "#    #     #    #\n" + 
-    "#     #   #     #\n" + 
-    "#      # #      #\n" + 
-    "#       #       #\n" + 
-    "#               #\n" +
-    "#               #\n" + 
-    "#################\n";
-
-
-ika.load_level = function (level_name) {
-    var cube_model = please.access("cube.jta");
-    var radius = 10;
-
-    var lines = ika.levels[level_name].trim().split("\n");
-    var width = lines[0].length;
-    var height = lines.length;
-
-    var grid = 2;
-    var offset_x = (width-1)/2;
-    var offset_y = (height-1)/2;
-
-    for (var y=0; y<height; y+=1) {
-        for (var x=0; x<width; x+=1) {
-            var cube = cube_model.instance();
-            var slot = lines[height-1-y][x];
-            if (slot === "#") {
-                cube.location = [(x-offset_x)*grid, (y-offset_y)*grid, 0];
-                cube.shader.color = [1, 0, 0];
-                cube.use_manual_cache_invalidation();
-                ika.cubes.add(cube);
-            }
-        }
-    }
 };
 
 
@@ -139,38 +100,86 @@ addEventListener("mgrl_media_ready", please.once(function () {
     var graph = new please.SceneGraph();
 
     // add a camera object to the scene graph
-    var camera = new please.CameraNode();
+    var camera = ika.camera = new please.CameraNode();
     camera.look_at = [0.0, 0.0, 0.0];
     camera.location = [0.0, -30.0, 30.0];
     graph.add(camera);
     camera.activate();
 
+
     // define this before the cubes as a temporary bugfix :P
-    var prog = please.glsl("misty_shader", "simple.vert", "misty.frag");
+    // var prog = please.glsl("misty_shader", "simple.vert", "misty.frag");
+    // prog.activate();
+    var prog = please.glsl("combined", "simple.vert", "combined.frag");
     prog.activate();
 
     // add the handle for level assets
     ika.cubes = new please.GraphNode();
     graph.add(ika.cubes);
-
-    // load some cubes
-    ika.load_level("start");
-
+    
     // add a center reference for now
     var cube_model = please.access("cube.jta");
-    var cube = cube_model.instance();
+    var cube = ika.cube = cube_model.instance();
     cube.location = [0, 0, 1];
     cube.shader.color = [0, 0, 0];
     graph.add(cube);
     camera.look_at = cube;
 
+    // test level thing
+    var bg_model = please.access("test_level.jta");
+    var test = bg_model.instance();
+    graph.add(test);
+
+    // light test
+    var light = ika.light = new SpotLightNode();
+    light.location = [-10, 10, 20];
+    light.look_at = [0, 0, 0];
+    //light.fov = 45;
+    graph.add(light);
+
+    // debug
+    light.near = 10;
+    light.location_x = please.oscillating_driver(-20, 20, 5000);
+
+
+    // add a depth texture pass
+    var prog = please.glsl("depth_shader", "simple.vert", "depth.frag");
+    ika.depth_pass = new please.RenderNode("depth_shader");
+    ika.depth_pass.graph = graph;
+    ika.depth_pass.render = function () {
+        light.activate();
+        this.graph.draw();
+        camera.activate();
+    };
+
+    
     // Add a renderer using the default shader.
-    ika.diffuse_pass = new please.RenderNode("misty_shader");
+    //ika.diffuse_pass = new please.RenderNode("misty_shader");
+    ika.diffuse_pass = new please.RenderNode("combined");
+    ika.diffuse_pass.shader.depth_texture = ika.depth_pass;
+    ika.diffuse_pass.shader.light_view_matrix = function () { return light.view_matrix; };
+    ika.diffuse_pass.shader.light_projection_matrix = function () { return light.projection_matrix; };
+    
     ika.diffuse_pass.graph = graph;
     var gloom = 0.175;
     ika.diffuse_pass.clear_color = [gloom, gloom, gloom, 1];
 
-        
+
+    var pip = new please.PictureInPicture();
+    pip.shader.main_texture = ika.diffuse_pass;
+    pip.shader.pip_texture = ika.depth_pass;
+    
+    
     // Transition from the loading screen prefab to our renderer
-    ika.viewport.raise_curtains(ika.diffuse_pass);
+    //ika.viewport.raise_curtains(ika.diffuse_pass);
+    ika.viewport.raise_curtains(pip);
 }));
+
+
+
+var SpotLightNode = function () {    
+    please.CameraNode.call(this);
+    this.width = 1;
+    this.height = 1;
+};
+SpotLightNode.prototype = Object.create(please.CameraNode.prototype);
