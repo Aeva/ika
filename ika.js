@@ -37,11 +37,11 @@ var ika = {
         "cube.jta",
         "test_level.jta",
         "test_level_bake.png",
+        "haze.png",
 
-        "misty.frag",
         "depth.frag",
-        "combined.frag",
-        "lightmask.glsl",
+        "bitmask.frag",
+        "illumination.frag",
     ],
 };
 
@@ -105,13 +105,13 @@ addEventListener("mgrl_media_ready", please.once(function () {
     camera.location = [0.0, -30.0, 30.0];
     graph.add(camera);
     camera.activate();
-
+    
 
     // define this before the cubes as a temporary bugfix :P
     // var prog = please.glsl("misty_shader", "simple.vert", "misty.frag");
     // prog.activate();
-    var prog = please.glsl("combined", "simple.vert", "combined.frag");
-    prog.activate();
+    // var prog = please.glsl("light_mask", "simple.vert", "illumination.frag");
+    // prog.activate();
 
     // add the handle for level assets
     ika.cubes = new please.GraphNode();
@@ -133,16 +133,18 @@ addEventListener("mgrl_media_ready", please.once(function () {
     // light test
     var light = ika.light = new SpotLightNode();
     light.location = [10, -10, 15];
-    light.look_at = [0, 0, 0];
+    light.look_at = [0, 0, 5];
     light.fov = 60;
     graph.add(light);
 
     light.location_x = please.oscillating_driver(10, -10, 5000);
     light.location_y = please.oscillating_driver(-10, -15, 2500);
-    
+
+
+
 
     // add a depth texture pass
-    var prog = please.glsl("depth_shader", "simple.vert", "depth.frag");
+    please.glsl("depth_shader", "simple.vert", "depth.frag");
     ika.depth_pass = new please.RenderNode("depth_shader");
     ika.depth_pass.graph = graph;
     ika.depth_pass.render = function () {
@@ -153,24 +155,42 @@ addEventListener("mgrl_media_ready", please.once(function () {
 
     
     // Add a renderer using the default shader.
-    ika.diffuse_pass = new please.RenderNode("combined");
-    ika.diffuse_pass.shader.depth_texture = ika.depth_pass;
-    ika.diffuse_pass.shader.mystery_scalar = function () { return (light.far - light.near) / 2; };
-    ika.diffuse_pass.shader.light_view_matrix = function () { return light.view_matrix; };
-    ika.diffuse_pass.shader.light_projection_matrix = function () { return light.projection_matrix; };
-    
+    please.glsl("light_mask", "simple.vert", "illumination.frag");
+    ika.light_pass = new please.RenderNode("light_mask");
+    ika.light_pass.shader.depth_texture = ika.depth_pass;
+    ika.light_pass.shader.mystery_scalar = function () {
+        return (light.far - light.near) / 2;
+    };
+    ika.light_pass.shader.light_view_matrix = function () {
+        return light.view_matrix;
+    };
+    ika.light_pass.shader.light_projection_matrix = function () {
+        return light.projection_matrix;
+    };
+    ika.light_pass.clear_color = [0,0,0,1];
+    ika.light_pass.graph = graph;
+
+
+    // diffuse pass
+    ika.diffuse_pass = new please.RenderNode("default");
     ika.diffuse_pass.graph = graph;
-    var gloom = 0.175;
-    ika.diffuse_pass.clear_color = [gloom, gloom, gloom, 1];
 
+        
+    // bitmask pass
+    var prog = please.glsl("bitmask", "simple.vert", "bitmask.frag");
+    ika.combined = new please.RenderNode("bitmask");
+    ika.combined.shader.mask_texture = ika.light_pass;
+    ika.combined.shader.fg_texture = ika.diffuse_pass;
+    ika.combined.shader.bg_texture = "haze.png";
 
+    
+    // debug
     var pip = new please.PictureInPicture();
-    pip.shader.main_texture = ika.diffuse_pass;
+    pip.shader.main_texture = ika.combined;
     pip.shader.pip_texture = ika.depth_pass;
     
     
     // Transition from the loading screen prefab to our renderer
-    //ika.viewport.raise_curtains(ika.diffuse_pass);
     ika.viewport.raise_curtains(pip);
 }));
 
