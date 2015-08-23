@@ -41,10 +41,11 @@ var ika = {
         "psycho_bake.png",
         "psycho.jta",
 
-        "depth.frag",
-        "bitmask.frag",
-        "collision.frag",
-        "illumination.frag",
+        "meta.frag",
+        // "depth.frag",
+        // "bitmask.frag",
+        // "collision.frag",
+        // "illumination.frag",
     ],
 
     "input" : {
@@ -70,7 +71,8 @@ ika.load_room = function (asset) {
     var display = new please.GraphNode();
     var collision = new please.GraphNode();
 
-    please.gl.get_program("collision_shader").activate();
+    please.gl.get_program("custom").activate();
+    //please.gl.get_program("collision_shader").activate();
     var cache = [];
     for (var i=0; i<model.children.length; i+=1) {
         cache.push(model.children[i]);
@@ -134,7 +136,12 @@ ika.add_input_handler = function () {
 
 
 // request the character be moved
+ika.__pending_bump = null;
 ika.bump = function () {
+    window.clearTimeout(ika.__pending_bump);
+    ika.__pending_bump = window.setTimeout(ika.__bump_call, 0);
+};
+ika.__bump_call = function () {
     var active = false;
     var invert = false;
     if (!ika.input.up ^ !ika.input.down) {
@@ -158,11 +165,11 @@ ika.bump = function () {
         if (invert) {
             dir *= -1;
         }
-        ika.player.rotation_z += 3.5 * dir;
+        ika.player.rotation_z += 5 * dir;
         active = true;
     }
     if (active) {
-        window.setTimeout(ika.bump, 0);
+        ika.bump();
     }
 };
 
@@ -241,6 +248,11 @@ addEventListener("mgrl_media_ready", please.once(function () {
     // have finished.  As we are using this to initialize and start
     // the game, the callback is wrapped in the "please.once"
     // function, to ensure that it is only called once.
+
+    // build and activate the custom shader program
+    var prog = please.glsl("custom", "simple.vert", "meta.frag");
+    prog.activate();
+    
     
     // initialize a scene graph object for visible objects
     var graph = new please.SceneGraph();
@@ -313,7 +325,7 @@ addEventListener("mgrl_media_ready", please.once(function () {
     ortho.activate();
 
     // shader for collision detection
-    var prog = please.glsl("collision_shader", "simple.vert", "collision.frag");
+    //var prog = please.glsl("collision_shader", "simple.vert", "collision.frag");
     
 
     // define this before the cubes as a temporary bugfix :P
@@ -358,9 +370,10 @@ addEventListener("mgrl_media_ready", please.once(function () {
     player.propogate(function (node) {
         node.no_shadow = true;
     });
-    
-    please.glsl("depth_shader", "simple.vert", "depth.frag");
-    ika.depth_pass = new please.RenderNode("depth_shader");
+
+    //please.glsl("light_mask", "simple.vert", "depth.frag");
+    ika.depth_pass = new please.RenderNode("custom");
+    ika.depth_pass.shader.depth_pass = true;
     ika.depth_pass.graph = graph;
     ika.depth_pass.render = function () {
         light.activate();
@@ -387,41 +400,45 @@ addEventListener("mgrl_media_ready", please.once(function () {
 
     
     // Add a renderer using the default shader.
-    please.glsl("light_mask", "simple.vert", "illumination.frag");
-    ika.light_pass = new please.RenderNode("light_mask");
+    //please.glsl("light_mask", "simple.vert", "illumination.frag");
+    ika.light_pass = new please.RenderNode("custom");
+    ika.light_pass.shader.illumination_pass = true;
     ika.light_pass.clear_color = [0,0,0,1];
     ika.light_pass.graph = graph;
     add_lighting(ika.light_pass);
     
 
     // diffuse pass
-    ika.diffuse_pass = new please.RenderNode("default");
+    ika.diffuse_pass = new please.RenderNode("custom");
+    ika.diffuse_pass.shader.diffuse_pass = true;
     ika.diffuse_pass.graph = graph;
 
         
     // bitmask pass
-    var prog = please.glsl("bitmask", "simple.vert", "bitmask.frag");
-    ika.combined = new please.RenderNode("bitmask");
-    ika.combined.shader.mask_texture = ika.light_pass;
-    ika.combined.shader.fg_texture = ika.diffuse_pass;
-    ika.combined.shader.bg_texture = "haze.png";
+    //var prog = please.glsl("bitmask", "simple.vert", "bitmask.frag");
+    ika.bitmask = new please.RenderNode("custom");
+    ika.bitmask.shader.bitmask_pass = true;
+    ika.bitmask.shader.mask_texture = ika.light_pass;
+    ika.bitmask.shader.fg_texture = ika.diffuse_pass;
+    ika.bitmask.shader.bg_texture = "haze.png";
 
 
     // collision pass
-    ika.collision_pass = new please.RenderNode("collision_shader");
+    ika.collision_pass = new please.RenderNode("custom");
+    ika.collision_pass.shader.collision_pass = true;
     ika.collision_pass.graph = collision_graph;
     ika.collision_pass.clear_color = [1, 0, 0, 1];
     add_lighting(ika.collision_pass);
     
     
-    // debug
-    var pip = new please.PictureInPicture();
-    pip.shader.main_texture = ika.combined;
-    pip.shader.pip_texture = ika.collision_pass; //ika.depth_pass;
+    // // debug
+    // var pip = new please.PictureInPicture();
+    // pip.shader.main_texture = ika.bitmask;
+    // pip.shader.pip_texture = ika.collision_pass; //ika.depth_pass;
     
     
     // Transition from the loading screen prefab to our renderer
-    ika.viewport.raise_curtains(ika.combined);
+    ika.viewport.raise_curtains(ika.bitmask);
 }));
 
 
