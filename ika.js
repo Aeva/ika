@@ -35,8 +35,10 @@ var ika = {
     "manifest" : [
         // add art assets here
         "cube.jta",
-        "test_level.jta",
-        "test_level_bake.png",
+        // "test_level.jta",
+        // "test_level_bake.png",
+        "forest_path.jta",
+        "forest_path_bake.png",
         "haze.png",
         "psycho_bake.png",
         "psycho.jta",
@@ -269,7 +271,7 @@ addEventListener("mgrl_media_ready", please.once(function () {
 
 
     // test level thing
-    var room_data = ika.load_room("test_level.jta");
+    var room_data = ika.load_room("forest_path.jta");
     graph.add(room_data.display);
     collision_graph.add(room_data.collision);
 

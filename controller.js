@@ -96,7 +96,7 @@ ika.__bump_call = function () {
         if (invert) {
             dir *= -1;
         }
-        ika.player.rotation_z += 5 * dir;
+        ika.player.rotation_z += 3 * dir;
         active = true;
     }
     if (active) {
