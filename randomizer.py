@@ -23,12 +23,15 @@ if __name__ == "__main__":
     
     slots = range(len(data))
     random.shuffle(slots)
-    fuzz = clamp(fuzz, 0, 100)/100.0
+    fuzz = clamp(float(fuzz), 0, 100)/100.0
     cut = math.floor(len(data) * fuzz)
+
+    count = 0;
     for i in slots:
-        if i > cut:
+        if count > cut:
             break
         else:
+            count += 1
             data[i] = data[i] + ((random.random()*float(magnitude))-(float(magnitude)/2.0))
     rencoded = base64.b64encode(data.tostring()).decode("ascii")
     jta['attributes'][0]['vertices']['position']['data'] = rencoded
