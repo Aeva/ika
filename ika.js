@@ -136,14 +136,11 @@ ika.add_input_handler = function () {
 // request the character be moved
 ika.bump = function () {
     var active = false;
-    if (!ika.input.left ^ !ika.input.right) {
-        var dir = ika.input.left ? 1 : -1;
-        ika.player.rotation_z += 3.5 * dir;
-        active = true;
-    }
+    var invert = false;
     if (!ika.input.up ^ !ika.input.down) {
         var dir = ika.input.up ? "ahead" : "behind";
         var target = ika.player[dir];
+        invert = dir === "behind";
         if ((ika.mode === "human" && ika.samples[dir] !== "wall") || ika.mode === "monster") {
             ika.player.location = target;
         }
@@ -154,6 +151,14 @@ ika.bump = function () {
             ika.mode = "human";
         }
         
+        active = true;
+    }
+    if (!ika.input.left ^ !ika.input.right) {
+        var dir = ika.input.left ? 1 : -1;
+        if (invert) {
+            dir *= -1;
+        }
+        ika.player.rotation_z += 3.5 * dir;
         active = true;
     }
     if (active) {
@@ -203,7 +208,16 @@ addEventListener("load", function setup () {
     // maintainig a fullscreen state when the canvas has the
     // 'fullscreen' css class applied to it.
     please.pipeline.add_autoscale();
-    
+
+    // register a render pass with the scheduler
+    please.pipeline.add(5, "project/collision", function () {
+        var canvas = please.gl.canvas;
+        please.render(ika.collision_pass);
+        ika.samples.upon = ika.px_type(please.gl.pick(0.5, 0.5));
+        ika.samples.ahead = ika.px_type(please.gl.pick(0.5, 0.47));
+        ika.samples.behind = ika.px_type(please.gl.pick(0.5, 0.57));
+    }).skip_when(function () { return ika.collision_pass === undefined });
+
     // register a render pass with the scheduler
     please.pipeline.add(10, "project/draw", function () {
         please.render(ika.viewport);
@@ -328,13 +342,13 @@ addEventListener("mgrl_media_ready", please.once(function () {
     
     // light test
     var light = ika.light = new SpotLightNode();
-    light.location = [10, -10, 15];
+    light.location = [10, -14, 17];
     light.look_at = [0, 0, 5];
     light.fov = 60;
     graph.add(light);
 
-    light.location_x = please.oscillating_driver(10, -10, 5000);
-    light.location_y = please.oscillating_driver(-15, -20, 2500);
+    // light.location_x = please.oscillating_driver(10, -10, 5000);
+    // light.location_y = please.oscillating_driver(-15, -20, 2500);
 
 
 
@@ -398,19 +412,7 @@ addEventListener("mgrl_media_ready", please.once(function () {
     ika.collision_pass.graph = collision_graph;
     ika.collision_pass.clear_color = [1, 0, 0, 1];
     add_lighting(ika.collision_pass);
-
-
-    // register a render pass with the scheduler
-    please.pipeline.add(5, "project/collision", function () {
-        var canvas = please.gl.canvas;
-        please.render(ika.collision_pass);
-
-        ika.samples.upon = ika.px_type(please.gl.pick(0.5, 0.5));
-        ika.samples.ahead = ika.px_type(please.gl.pick(0.5, 0.4));
-        ika.samples.behind = ika.px_type(please.gl.pick(0.5, 0.6));
-        
-    }).skip_when(function () { return ika.viewport === null; });
-
+    
     
     // debug
     var pip = new please.PictureInPicture();
