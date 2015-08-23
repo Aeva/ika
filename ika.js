@@ -187,16 +187,16 @@ addEventListener("mgrl_media_ready", please.once(function () {
     please.make_animatable(player, "ahead");
     please.make_animatable(player, "behind");
     graph.add(player);
-    player.location_x = 7;
-    player.rotation_z = 180;
+    player.location = [43, 1, 0];
+    player.rotation_z = -70;
     player.ahead = function () {
         var mat = mat4.create();
-        mat4.translate(mat, this.shader.world_matrix, [0, -.6, 0]);
+        mat4.translate(mat, this.shader.world_matrix, [0, -.2, 0]);
         return vec3.transformMat4(vec3.create(), vec3.create(), mat);
     };
     player.behind = function () {
         var mat = mat4.create();
-        mat4.translate(mat, this.shader.world_matrix, [0, .3, 0]);
+        mat4.translate(mat, this.shader.world_matrix, [0, .15, 0]);
         return vec3.transformMat4(vec3.create(), vec3.create(), mat);
     };
     
@@ -210,7 +210,7 @@ addEventListener("mgrl_media_ready", please.once(function () {
     // add a camera object to the scene graph
     var camera = ika.camera = new please.CameraNode();
     camera.look_at = function () {
-        return [player.location_x, player.location_y, player.location_z + 2];
+        return [player.location_x, player.location_y, player.location_z + 5];
     };
     camera.location = function () {
         var mat_a = mat4.create();
@@ -218,7 +218,8 @@ addEventListener("mgrl_media_ready", please.once(function () {
         var mat_c = mat4.create();
         mat4.translate(mat_a, mat4.create(), player.location);
         mat4.rotateZ(mat_b, mat_a, please.radians(player.rotation_z));
-        mat4.translate(mat_c, mat_b, [0.0, 9.7, 20.7]);
+        //mat4.translate(mat_c, mat_b, [0.0, 9.7, 20.7]);
+        mat4.translate(mat_c, mat_b, [0.0, 9.7, 9]);
         
         return vec3.transformMat4(
             vec3.create(), vec3.create(), mat_c);
@@ -271,10 +272,18 @@ addEventListener("mgrl_media_ready", please.once(function () {
 
 
     // test level thing
-    var room_data = ika.load_room("forest_path.jta");
-    graph.add(room_data.display);
-    collision_graph.add(room_data.collision);
-
+    var placements = [
+        [[0, 0, 0], 0],
+        [[-92.754402, 74.381683, 0], 215.254737],
+        [[131.151932, 24.624718, 0], -169.764584],
+    ];
+    for (var i=0; i<placements.length; i+=1) {
+        var room_data = ika.load_room("forest_path.jta");
+        graph.add(room_data.display);
+        collision_graph.add(room_data.collision);
+        room_data.display.location = placements[i][0]
+        room_data.display.rotation_z = placements[i][1]
+    }
     
     // light test
     var light = ika.light = new SpotLightNode();
