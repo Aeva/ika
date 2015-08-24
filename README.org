@@ -1,0 +1,163 @@
+* ludum dare 33 post mortem
+** gameplay before style
+I think it would have worked better to have a good gameplay mechanic
+in mind first and some scenarios that would flow from that, before
+worrying about the artistic elements to it.
+
+Instead, I picked something visually interesting to me that doesn't
+make any sense without explanation (not that I don't think it couldn't
+work still, I think the idea alone wasn't enough).  I did accomplish
+some interesting things with this in the mean time, but I don't think
+a coherent game would have flowed from it.
+
+** work out control scheme early
+What I should have done was to make something point-and-click, and use
+a very simple system of collision stuff, if at all.  Rather, it would
+be better if mgrl had something already for which I could use to
+prototype with.
+
+** ika
+I still think that the idea with the lights is really cool, but here
+are some things that need to be present in the second attempt:
+
+1) dead areas should still be partially visible - maybe they're
+   disintegrated and tinted, but when they dissappear all together, it
+   just looks like something is broken or like a clipping plane
+
+2) spotlight doesn't work when facing straight down for some reason -
+   I don't know why this is.
+
+3) collision detection should happen in a worker thread - input events
+   should be propogated directly to the thread, and then the thread
+   should periodically send updates to the display thread for where
+   the character should be.  This might be a constant stream of
+   updates, though it might also mean setting up animation drivers to
+   free up bandwidth.
+
+4) cache the collision data, only update the cache every 12hz or
+   something.  If the controlls are responsive, its likely that the
+   players won't actually notice, and this allows for more complex
+   operations (possibly pulling down the frame buffer for the
+   collision pass).
+
+5) don't just make something that looks like a game.  It is a hard
+   problem (right now at least), but it also needs something in it
+   that is itself engaging to do.
+
+** lighting
+Lighting mostly worked, and I think I learned a lot about how to use
+this in the future!
+
+I need to find another example of shadow mapping that I can reference,
+though I think I understand the overall theory now.
+
+Some stuff I'm still confused about:
+
+*** wtf is up with my depth buffers
+They only contained anything when the near plane was increased to
+10ish, which ofcourse also resulted in cliping.  Do I need 32 bit
+textures to make this work at all?  Is there some way to more
+effectively make use of the remaining color channels?
+
+I noticed this problem before with trying to implement depth of field.
+
+*** what was "magic scalar"
+It seemed to be a number that normalizes the destinace of the
+coordinate to the light to be compatible with that in the shadow map.
+The reason why this doesn't work is probably because of my weird near
+plane.
+
+My guess is that the demo generates the depth buffer in a different
+way, and that you probably should too.
+
+Possible fix:
+#+BEGIN_SRC glsl
+  float bias = 0.001;
+  float near = 10;
+  float far = 100;
+  float scale = far-near;
+  float dist = (length(position) - near) / scale;
+  float light_depth_1 = texture2D(depth_texture, light_uv).r;
+  float light_depth_2 = clamp(dist, 0.0, 1.0);
+  float illuminated = step(light_depth_2, light_depth_1 + bias);
+#+END_SRC
+
+** mgrl deficit areas
+*** glsl -> glsl compiler
+Switching the shader program is *really* expensive.  Switching the
+shader program is *really* expensive.  Switching the shader program is
+*really* expensive.
+
+*** model compiler
+Manual cache invalidation for graph nodes is a nice boost, but I think
+there really needs to be a concept of static models.
+
+Ony way to do this is the procedural mesh generation system you were
+considering, wherein you stamp a mesh repeatedly to build it up.
+
+*** graph node spacial rigamarole
+Node.location is in local coordinate space.  There should be a driver
+that returns the node's location in world coordinates.
+
+When you pass a graph node to a driver, rather than taking
+node.location, it should instead be shorthand for node.world_location.
+
+*** graph node presiding shader
+Currently, this is just whatever shader happens to be active at the
+time of activation.  I'm not really sure what the best way to deal
+with this is tbh.
+
+*** sampler arrays
+Don't exist yet, and I needed them for multiple lights.
+
+*** control / config render buffer sizes for render nodes
+particularly, I wanted to be able to render my collision detection to
+something like a 16x16 texture.
+
+*** mechanism to force a render node to indirectly render
+Something like please.render(node, indirect) or something.
+
+*** double check your defaults for depth testing
+these don't seem to be present by default:
+gl.enable(gl.DEPTH_TEST)
+gl.depthFunc(gl.LEQUAL)
+
+*** control frequency of cache invalidation on render nodes
+would be nice to have some that only update at a fixed rate
+
+*** the include macro periodically doesn't activate
+** mgrl improvements
+*** texture download
+http://stackoverflow.com/questions/15057720/read-pixels-in-webgltexture-rendering-webgl-to-texture
+https://www.opengl.org/sdk/docs/man/html/glReadPixels.xhtml
+
+there might be an extension available for glGetTexImage, but this
+seems unlikley.  Also, PBO is probbaly moreso the "right" tool for the
+job, but also probably not available (definitely not available on
+android).
+
+*** meta shaders
+The section above about glsl -> glsl compiling provides the
+interesting possibility of allowing mixing and matching of different
+shaders per object.  Will need to think on how best to implement this.
+
+*** controll schemes?
+I think m.grl really needs to have some selection of "drop in" control
+schemes that games can use.  Ideally this would also be things like
+character movement / behavior, but I don't actually have any good
+ideas as how to generate that.
+
+*** 2D mode
+Bas requested this - which is a mode of running wherein things are
+rendered with the dom.
+
+*** tile maps
+Another request from bas - wich is the ability to compose textures
+from other textures.  I think this is a good idea, and could be used
+for things like rendering tiled files.
+
+Perhaps gani support could also be reworked to use this.
+*** orthographic zoom factor
+I've been wanting something like this, and Bas also requested it.  Bas
+said his images were showing up too small - maybe the scale as is is
+wrong?
