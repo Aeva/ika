@@ -22,7 +22,9 @@ are some things that need to be present in the second attempt:
 
 1) dead areas should still be partially visible - maybe they're
    disintegrated and tinted, but when they dissappear all together, it
-   just looks like something is broken or like a clipping plane
+   just looks like something is broken or like a clipping plane.  This
+   might work better with point lights than spot lights though, or
+   make a lot more sense when there are more lights.
 
 2) spotlight doesn't work when facing straight down for some reason -
    I don't know why this is.
