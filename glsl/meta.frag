@@ -46,7 +46,7 @@ float illumination () {
     return 0.0;
   }
 
-  float bias = 0.001;
+  float bias = 0.1;
   float light_depth_1 = texture2D(depth_texture, light_uv).r;
   float light_depth_2 = length(position);
   float illuminated = step(light_depth_2, light_depth_1 + bias);
