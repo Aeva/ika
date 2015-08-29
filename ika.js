@@ -305,7 +305,7 @@ addEventListener("mgrl_media_ready", please.once(function () {
     });
 
     //please.glsl("light_mask", "simple.vert", "depth.frag");
-    ika.depth_pass = new please.RenderNode("custom");
+    ika.depth_pass = new please.RenderNode("custom", {"type":gl.FLOAT});
     ika.depth_pass.shader.depth_pass = true;
     ika.depth_pass.graph = graph;
     ika.depth_pass.render = function () {

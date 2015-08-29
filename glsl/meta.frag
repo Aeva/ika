@@ -3,22 +3,23 @@ precision mediump float;
 
 uniform float mgrl_buffer_width;
 uniform float mgrl_buffer_height;
-varying vec3 world_position;
 uniform vec4 mgrl_clear_color;
-uniform float mystery_scalar;
 uniform mat4 light_projection_matrix;
 uniform mat4 light_view_matrix;
-uniform sampler2D depth_texture;
-uniform sampler2D diffuse_texture;
 
 uniform float alpha;
 uniform bool is_sprite;
 uniform bool is_transparent;
+
+varying vec3 world_position;
 varying vec2 local_tcoords;
+varying float linear_depth;
 
 uniform sampler2D mask_texture;
 uniform sampler2D fg_texture;
 uniform sampler2D bg_texture;
+uniform sampler2D depth_texture;
+uniform sampler2D diffuse_texture;
 
 uniform vec3 color;
 
@@ -46,11 +47,10 @@ float illumination () {
   }
 
   float bias = 0.001;
-  float scale = 40.0;
-  scale = mystery_scalar;
   float light_depth_1 = texture2D(depth_texture, light_uv).r;
-  float light_depth_2 = clamp(length(position)/scale, 0.0, 1.0);
+  float light_depth_2 = length(position);
   float illuminated = step(light_depth_2, light_depth_1 + bias);
+  //float illuminated = step(light_depth_1, light_depth_2 + bias);
 
   return illuminated;
 }
@@ -58,8 +58,7 @@ float illumination () {
 
 void main(void) {
   if (depth_pass) {
-    float depth = gl_FragCoord.z;
-    gl_FragColor = vec4(depth, depth, depth, 1.0);
+    gl_FragColor = vec4(linear_depth, linear_depth, linear_depth, 1.0);
   }
   else if (bitmask_pass) {
     vec2 tcoords = normalize_screen_coord(gl_FragCoord.xy);
