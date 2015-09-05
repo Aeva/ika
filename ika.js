@@ -56,8 +56,7 @@ ika.load_room = function (asset) {
     var display = new please.GraphNode();
     var collision = new please.GraphNode();
 
-    //please.gl.get_program("custom").activate();
-    //please.gl.get_program("collision_shader").activate();
+
     var cache = [];
     for (var i=0; i<model.children.length; i+=1) {
         cache.push(model.children[i]);
@@ -66,12 +65,12 @@ ika.load_room = function (asset) {
         var child = cache[i];
         if (child.node_name.startsWith("wall")) {
             child.__regen_glsl_bindings();
-            child.shader.color = [0,0,0];
+            child.shader.wall_type = [0,0,0];
             collision.add(child);
         }
         else if (child.node_name.startsWith("floor")) {
             child.__regen_glsl_bindings();
-            child.shader.color = [1,1,1];
+            child.shader.wall_type = [1,1,1];
             collision.add(child);
         }
         else {
@@ -126,9 +125,8 @@ addEventListener("load", function setup () {
     // These should be defaults in m.grl but aren't currently :P
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
-    //gl.enable(gl.CULL_FACE);
     gl.disable(gl.CULL_FACE);
-
+    
     // Define where m.grl is to find various assets when using the
     // load methed.
     please.set_search_path("img", "images/");
@@ -244,17 +242,33 @@ addEventListener("mgrl_media_ready", please.once(function () {
     var collision_graph = new please.SceneGraph();
     var ortho = ika.ortho = new please.CameraNode();
     ortho.set_orthographic();
-    ortho.width = 128;
-    ortho.height = 128;
-    ortho.look_at = player;
+    // ortho.width = 128;
+    // ortho.height = 128;
+    ortho.width = 256;
+    ortho.height = 256;
+    //ortho.look_at = player;
+    ortho.look_at = function () {
+        var scale = 1;
+        return [
+            Math.round(player.location_x/scale)*scale,
+            Math.round(player.location_y/scale)*scale,
+            0
+        ];
+    };
     ortho.location = function () {
-        return [player.location_x, player.location_y, 40];
+        var scale = 1;
+        return [
+            Math.round(player.location_x/scale)*scale,
+            Math.round(player.location_y/scale)*scale,
+            40
+        ];
     };
-    ortho.up_vector = function () {
-        var rotation = mat4.rotateZ(
-            mat4.create(), mat4.create(), please.radians(player.rotation_z));
-        return vec3.transformMat4(vec3.create(), [0, -1, 0], rotation);
-    };
+    // ortho.up_vector = function () {
+    //     var rotation = mat4.rotateZ(
+    //         mat4.create(), mat4.create(), please.radians(player.rotation_z));
+    //     return vec3.transformMat4(vec3.create(), [0, -1, 0], rotation);
+    // };
+    ortho.up_vector = [0, 1, 0];
     collision_graph.add(ortho);
     ortho.activate();
 
@@ -269,20 +283,7 @@ addEventListener("mgrl_media_ready", please.once(function () {
     var light = new please.SpotLightNode();
     light.location = [10, -14, 17];
     light.look_at = [0, 0, 5];
-    light.fov = 30;
-    graph.add(light);
-
-    light = new please.SpotLightNode();
-    light.location = [-10, -14, 17];
-    light.look_at = [0, 0, 5];
-    light.fov = 30;
-    graph.add(light);
-
-
-    light = new please.SpotLightNode();
-    light.location = [5, 0, 17];
-    light.look_at = [6, -5, 5];
-    light.fov = 50;
+    light.fov = 45;
     graph.add(light);
 
     light = new please.SpotLightNode();
@@ -291,30 +292,91 @@ addEventListener("mgrl_media_ready", please.once(function () {
     light.fov = 50;
     graph.add(light);
 
-    light = new please.SpotLightNode();
-    light.location = [0, 0, 17];
-    light.look_at = [0, -10, 5];
-    light.fov = 30;
-    graph.add(light);
+
+
+    // extra gbuffer pass for collision detection
+    var gbuffer_options = {
+        "width" : 256,
+        "height" : 256,
+        "buffers" : ["color", "spatial"],
+        "type":gl.FLOAT,
+    };
+    var gbuffers = new please.RenderNode(prog, gbuffer_options);
+    gbuffers.clear_color = [-1, -1, -1, -1];
+    gbuffers.shader.shader_pass = 0;
+    gbuffers.shader.geometry_pass = true;
+    gbuffers.graph = collision_graph;
 
     
-    // // collision pass
-    // ika.collision_pass = new please.RenderNode("custom");
-    // ika.collision_pass.shader.collision_pass = true;
-    // ika.collision_pass.graph = collision_graph;
-    // ika.collision_pass.clear_color = [1, 0, 0, 1];
-    // add_lighting(ika.collision_pass);
+    // collision pass
+    var collision_options = {
+        "width" : 16,
+        "height" : 16,
+    };
+    ika.collision_mask = new please.RenderNode(prog, collision_options);
+    ika.collision_mask.graph = collision_graph;
+    ika.collision_mask.clear_color = [0, 0, 0, 1];
+    ika.collision_mask.shader.shader_pass = 5;
+    ika.collision_mask.shader.geometry_pass = false;
+    ika.collision_mask.shader.spatial_texture = gbuffers.buffers.spatial;
+    ika.collision_mask.render = function () {
+        if (ika.renderer.graph !== null) {
+            gl.disable(gl.DEPTH_TEST);
+            //gl.enable(gl.CULL_FACE);
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.ONE, gl.ONE);
+            // gl.blendFuncSeparate(
+            //     gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.SRC_ALPHA, gl.ONE);
+
+            for (var i=0; i<ika.renderer.graph.__lights.length; i+=1) {
+                var light = ika.renderer.graph.__lights[i];
+                this.__prog.samplers.light_texture = ika.renderer.shader.light_texture.targets[i];
+                this.__prog.vars.light_view_matrix = light.camera.view_matrix;
+                this.__prog.vars.light_projection_matrix = light.camera.projection_matrix;
+                please.gl.splat();
+            }
+            gl.disable(gl.BLEND);
+            gl.disable(gl.CULL_FACE);
+            gl.enable(gl.DEPTH_TEST);
+        }
+    };
+    
+
+    // light world collision data
+    ika.light_world = new please.RenderNode(prog, collision_options);
+    ika.light_world.graph = collision_graph;
+    ika.light_world.clear_color = [0, 0, 0, 1];
+    ika.light_world.shader.shader_pass = 6;
+    ika.light_world.shader.geometry_pass = false;
+    ika.light_world.shader.spatial_texture = gbuffers.buffers.spatial;
+
+
+    // collision bitmask pass
+    ika.collision_final = new please.RenderNode(prog, collision_options);
+    ika.collision_final.shader.shader_pass = 4;
+    ika.collision_final.shader.mask_texture = 
+    ika.collision_final.shader.fg_texture = ika.light_world
+    ika.collision_final.shader.bg_texture = "haze.png";
+
+    ika.collision_final.frequency = 30;
+
 
         
-    // bitmask pass
-    //var prog = please.glsl("bitmask", "simple.vert", "bitmask.frag");
+    // main bitmask pass
     ika.bitmask = new please.RenderNode(prog);
     ika.bitmask.shader.shader_pass = 4;
     ika.bitmask.shader.mask_texture = ika.renderer.shader.light_texture;//ika.light_pass;
     ika.bitmask.shader.fg_texture = ika.renderer;
     ika.bitmask.shader.bg_texture = "haze.png";
-    
+
+    ika.bitmask.frequency = 30;
+
+
+    var pip = new please.PictureInPicture();
+    pip.shader.main_texture = ika.bitmask;
+    pip.shader.pip_texture = ika.collision_mask;
     
     // Transition from the loading screen prefab to our renderer
-    ika.viewport.raise_curtains(ika.bitmask);
+    //ika.viewport.raise_curtains(ika.bitmask);
+    ika.viewport.raise_curtains(pip);
 }));

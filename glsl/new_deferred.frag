@@ -27,6 +27,10 @@ uniform sampler2D bg_texture;
 // mode switching
 uniform int shader_pass;
 
+// collision
+uniform vec3 wall_type;
+
+
 #include "normalize_screen_coord.glsl"
 
 
@@ -46,7 +50,7 @@ float illumination(vec3 _position, float _depth) {
   }
 
   if (length(light_normal) <=1.0) {
-    float bias = 0.0;
+    float bias = 1.0;
     float light_depth_1 = texture2D(light_texture, light_uv).r;
     float light_depth_2 = length(position);
     float illuminated = step(light_depth_2, light_depth_1 + bias);
@@ -105,18 +109,32 @@ void main(void) {
     vec4 sampled = mask < 0.5 ? texture2D(bg_texture, tcoords) : texture2D(fg_texture, tcoords);
     gl_FragData[0] = sampled;
   }
-  // else if (shader_pass == 5) {
-  //   // collision pass
-  //   if (lit < 0.5) {
-  //     if (color == vec3(1.0, 1.0, 1.0)) {
-  //       gl_FragData[0] = vec4(0.0, 0.0, 1.0, 1.0);
-  //     }
-  //     else {
-  //       gl_FragData[0] = mgrl_clear_color;
-  //     }
-  //   }
-  //   else {
-  //     gl_FragData[0] = vec4(color, 1.0);
-  //   }
-  // }
+  else if (shader_pass == 5) {
+    // collision masking
+    vec2 tcoords = normalize_screen_coord(gl_FragCoord.xy);
+    vec4 space = texture2D(spatial_texture, tcoords);
+    if (space.w == -1.0) {
+      discard;
+    }
+    else {
+      float light = illumination(space.xyz, space.w);
+      if (light < 0.5) {        
+        gl_FragData[0] = mgrl_clear_color;
+      }
+      else {
+        gl_FragData[0] = vec4(1.0);
+      }
+    }
+  }
+  else if (shader_pass == 6) {
+    // render collision data
+    vec2 tcoords = normalize_screen_coord(gl_FragCoord.xy);
+    vec4 space = texture2D(spatial_texture, tcoords);
+    if (space.w == -1.0) {
+      discard;
+    }
+    else {
+      gl_FragData[0] = vec4(wall_type, 1.0);
+    }
+  }
 }
