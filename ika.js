@@ -35,15 +35,17 @@ var ika = {
     "manifest" : [
         // add art assets here
         "cube.jta",
-        // "test_level.jta",
-        // "test_level_bake.png",
-        "forest_path.jta",
-        "forest_path_bake.png",
+        "test_level.jta",
+        "test_level_bake.png",
+        // "forest_path.jta",
+        // "forest_path_bake.png",
         "haze.png",
         "psycho_bake.png",
         "psycho.jta",
 
-        "meta.frag",
+        //"meta.frag",
+        "new_deferred.vert",
+        "new_deferred.frag",
     ],
 };
 
@@ -54,7 +56,7 @@ ika.load_room = function (asset) {
     var display = new please.GraphNode();
     var collision = new please.GraphNode();
 
-    please.gl.get_program("custom").activate();
+    //please.gl.get_program("custom").activate();
     //please.gl.get_program("collision_shader").activate();
     var cache = [];
     for (var i=0; i<model.children.length; i+=1) {
@@ -124,6 +126,8 @@ addEventListener("load", function setup () {
     // These should be defaults in m.grl but aren't currently :P
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
+    //gl.enable(gl.CULL_FACE);
+    gl.disable(gl.CULL_FACE);
 
     // Define where m.grl is to find various assets when using the
     // load methed.
@@ -140,14 +144,14 @@ addEventListener("load", function setup () {
     // 'fullscreen' css class applied to it.
     please.pipeline.add_autoscale();
 
-    // register a render pass with the scheduler
-    please.pipeline.add(5, "project/collision", function () {
-        var canvas = please.gl.canvas;
-        please.render(ika.collision_pass);
-        ika.samples.upon = ika.px_type(please.gl.pick(0.5, 0.5));
-        ika.samples.ahead = ika.px_type(please.gl.pick(0.5, 0.47));
-        ika.samples.behind = ika.px_type(please.gl.pick(0.5, 0.57));
-    }).skip_when(function () { return ika.collision_pass === undefined });
+    // // register a render pass with the scheduler
+    // please.pipeline.add(5, "project/collision", function () {
+    //     var canvas = please.gl.canvas;
+    //     please.render(ika.collision_pass);
+    //     ika.samples.upon = ika.px_type(please.gl.pick(0.5, 0.5));
+    //     ika.samples.ahead = ika.px_type(please.gl.pick(0.5, 0.47));
+    //     ika.samples.behind = ika.px_type(please.gl.pick(0.5, 0.57));
+    // }).skip_when(function () { return ika.collision_pass === undefined });
 
     // register a render pass with the scheduler
     please.pipeline.add(10, "project/draw", function () {
@@ -174,12 +178,15 @@ addEventListener("mgrl_media_ready", please.once(function () {
     // function, to ensure that it is only called once.
 
     // build and activate the custom shader program
-    var prog = please.glsl("custom", "simple.vert", "meta.frag");
+    var prog = please.glsl("mgrl_illumination", "new_deferred.vert", "new_deferred.frag");
     prog.activate();
-    
-    
+        
     // initialize a scene graph object for visible objects
     var graph = new please.SceneGraph();
+
+    // Define our renderer
+    ika.renderer = new please.DeferredRenderer();
+    ika.renderer.graph = graph;
 
 
     // add a handle for our player
@@ -187,8 +194,10 @@ addEventListener("mgrl_media_ready", please.once(function () {
     please.make_animatable(player, "ahead");
     please.make_animatable(player, "behind");
     graph.add(player);
-    player.location = [43, 1, 0];
-    player.rotation_z = -70;
+    //player.location = [43, 1, 0];
+    player.location = [-4, 3, 0];
+    //player.rotation_z = -70;
+    player.rotation_z = 180;
     player.ahead = function () {
         var mat = mat4.create();
         mat4.translate(mat, this.shader.world_matrix, [0, -.2, 0]);
@@ -218,8 +227,8 @@ addEventListener("mgrl_media_ready", please.once(function () {
         var mat_c = mat4.create();
         mat4.translate(mat_a, mat4.create(), player.location);
         mat4.rotateZ(mat_b, mat_a, please.radians(player.rotation_z));
-        //mat4.translate(mat_c, mat_b, [0.0, 9.7, 20.7]);
-        mat4.translate(mat_c, mat_b, [0.0, 9.7, 9]);
+        mat4.translate(mat_c, mat_b, [0.0, 9.7, 20.7]);
+        //mat4.translate(mat_c, mat_b, [0.0, 9.7, 9]);
         
         return vec3.transformMat4(
             vec3.create(), vec3.create(), mat_c);
@@ -249,137 +258,63 @@ addEventListener("mgrl_media_ready", please.once(function () {
     collision_graph.add(ortho);
     ortho.activate();
 
-    // shader for collision detection
-    //var prog = please.glsl("collision_shader", "simple.vert", "collision.frag");
-    
 
-    // define this before the cubes as a temporary bugfix :P
-    // var prog = please.glsl("misty_shader", "simple.vert", "misty.frag");
-    // prog.activate();
-    // var prog = please.glsl("light_mask", "simple.vert", "illumination.frag");
-    // prog.activate();
+    //var room_data = ika.load_room("forest_path.jta");
+    var room_data = ika.load_room("test_level.jta");
+    graph.add(room_data.display);
+    collision_graph.add(room_data.collision);
 
-    // add the handle for level assets
-    ika.cubes = new please.GraphNode();
-    graph.add(ika.cubes);
-    
-    // add a center reference for now
-    var cube_model = please.access("cube.jta");
-    var cube = ika.cube = cube_model.instance();
-    cube.location = [0, 0, 1];
-    cube.shader.color = [0, 0, 0];
-    graph.add(cube);
-
-
-    // test level thing
-    var placements = [
-        [[0, 0, 0], 0],
-        [[-92.754402, 74.381683, 0], 215.254737],
-        [[131.151932, 24.624718, 0], -169.764584],
-    ];
-    for (var i=0; i<placements.length; i+=1) {
-        var room_data = ika.load_room("forest_path.jta");
-        graph.add(room_data.display);
-        collision_graph.add(room_data.collision);
-        room_data.display.location = placements[i][0]
-        room_data.display.rotation_z = placements[i][1]
-    }
     
     // light test
-    var light = ika.light = new SpotLightNode();
+    var light = new please.SpotLightNode();
     light.location = [10, -14, 17];
     light.look_at = [0, 0, 5];
-    light.fov = 60;
+    light.fov = 30;
     graph.add(light);
 
-    // light.location_x = please.oscillating_driver(10, -10, 5000);
-    // light.location_y = please.oscillating_driver(-15, -20, 2500);
+    light = new please.SpotLightNode();
+    light.location = [-10, -14, 17];
+    light.look_at = [0, 0, 5];
+    light.fov = 30;
+    graph.add(light);
 
 
+    light = new please.SpotLightNode();
+    light.location = [5, 0, 17];
+    light.look_at = [6, -5, 5];
+    light.fov = 50;
+    graph.add(light);
 
+    light = new please.SpotLightNode();
+    light.location = [-5, 0, 17];
+    light.look_at = [-6, -5, 5];
+    light.fov = 50;
+    graph.add(light);
 
-    // make sure that the player object nor any of its children have a
-    // shadow add a depth texture pass
-    player.propogate(function (node) {
-        node.no_shadow = true;
-    });
-
-    //please.glsl("light_mask", "simple.vert", "depth.frag");
-    ika.depth_pass = new please.RenderNode("custom", {"type":gl.FLOAT});
-    ika.depth_pass.shader.depth_pass = true;
-    ika.depth_pass.graph = graph;
-    ika.depth_pass.render = function () {
-        light.activate();
-        this.graph.draw();
-        // this.graph.draw(function (node) {
-        //     return !!node.no_shadow;
-        // });
-        camera.activate();
-    };
-
-
-    var add_lighting = function(node) {
-        node.shader.depth_texture = ika.depth_pass;
-        node.shader.mystery_scalar = function () {
-            return (light.far - light.near) / 2;
-        };
-        node.shader.light_view_matrix = function () {
-            return light.view_matrix;
-        };
-        node.shader.light_projection_matrix = function () {
-            return light.projection_matrix;
-        };
-    };
+    light = new please.SpotLightNode();
+    light.location = [0, 0, 17];
+    light.look_at = [0, -10, 5];
+    light.fov = 30;
+    graph.add(light);
 
     
-    // Add a renderer using the default shader.
-    //please.glsl("light_mask", "simple.vert", "illumination.frag");
-    ika.light_pass = new please.RenderNode("custom");
-    ika.light_pass.shader.illumination_pass = true;
-    ika.light_pass.clear_color = [0,0,0,1];
-    ika.light_pass.graph = graph;
-    add_lighting(ika.light_pass);
-    
-
-    // diffuse pass
-    ika.diffuse_pass = new please.RenderNode("custom");
-    ika.diffuse_pass.shader.diffuse_pass = true;
-    ika.diffuse_pass.graph = graph;
+    // // collision pass
+    // ika.collision_pass = new please.RenderNode("custom");
+    // ika.collision_pass.shader.collision_pass = true;
+    // ika.collision_pass.graph = collision_graph;
+    // ika.collision_pass.clear_color = [1, 0, 0, 1];
+    // add_lighting(ika.collision_pass);
 
         
     // bitmask pass
     //var prog = please.glsl("bitmask", "simple.vert", "bitmask.frag");
-    ika.bitmask = new please.RenderNode("custom");
-    ika.bitmask.shader.bitmask_pass = true;
-    ika.bitmask.shader.mask_texture = ika.light_pass;
-    ika.bitmask.shader.fg_texture = ika.diffuse_pass;
+    ika.bitmask = new please.RenderNode(prog);
+    ika.bitmask.shader.shader_pass = 4;
+    ika.bitmask.shader.mask_texture = ika.renderer.shader.light_texture;//ika.light_pass;
+    ika.bitmask.shader.fg_texture = ika.renderer;
     ika.bitmask.shader.bg_texture = "haze.png";
-
-
-    // collision pass
-    ika.collision_pass = new please.RenderNode("custom");
-    ika.collision_pass.shader.collision_pass = true;
-    ika.collision_pass.graph = collision_graph;
-    ika.collision_pass.clear_color = [1, 0, 0, 1];
-    add_lighting(ika.collision_pass);
-    
-    
-    // // debug
-    // var pip = new please.PictureInPicture();
-    // pip.shader.main_texture = ika.bitmask;
-    // pip.shader.pip_texture = ika.collision_pass; //ika.depth_pass;
     
     
     // Transition from the loading screen prefab to our renderer
     ika.viewport.raise_curtains(ika.bitmask);
 }));
-
-
-
-var SpotLightNode = function () {    
-    please.CameraNode.call(this);
-    this.width = 1;
-    this.height = 1;
-    this.near = 10;
-};
-SpotLightNode.prototype = Object.create(please.CameraNode.prototype);
