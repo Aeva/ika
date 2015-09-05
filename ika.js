@@ -312,6 +312,8 @@ addEventListener("mgrl_media_ready", please.once(function () {
     var collision_options = {
         "width" : 16,
         "height" : 16,
+        "min_filter" : gl.NEAREST,
+        "mag_filter" : gl.NEAREST,
     };
     ika.collision_mask = new please.RenderNode(prog, collision_options);
     ika.collision_mask.graph = collision_graph;
@@ -354,8 +356,8 @@ addEventListener("mgrl_media_ready", please.once(function () {
     // collision bitmask pass
     ika.collision_final = new please.RenderNode(prog, collision_options);
     ika.collision_final.shader.shader_pass = 4;
-    ika.collision_final.shader.mask_texture = 
-    ika.collision_final.shader.fg_texture = ika.light_world
+    ika.collision_final.shader.mask_texture = ika.collision_mask;
+    ika.collision_final.shader.fg_texture = ika.light_world;
     ika.collision_final.shader.bg_texture = "haze.png";
 
     ika.collision_final.frequency = 30;
@@ -374,7 +376,7 @@ addEventListener("mgrl_media_ready", please.once(function () {
 
     var pip = new please.PictureInPicture();
     pip.shader.main_texture = ika.bitmask;
-    pip.shader.pip_texture = ika.collision_mask;
+    pip.shader.pip_texture = ika.collision_final;//ika.collision_mask;
     
     // Transition from the loading screen prefab to our renderer
     //ika.viewport.raise_curtains(ika.bitmask);
