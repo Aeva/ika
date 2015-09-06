@@ -47,6 +47,7 @@ var ika = {
         "new_deferred.vert",
         "new_deferred.frag",
     ],
+    "physics" : new Worker("physics.js"),
 };
 
 
@@ -201,16 +202,10 @@ addEventListener("mgrl_media_ready", please.once(function () {
     player.rotation_z = 180;
     //player.location = [43, 1, 0];
     //player.rotation_z = -70;
-    
-    player.ahead = function () {
-        var mat = mat4.create();
-        mat4.translate(mat, this.shader.world_matrix, [0, -.2, 0]);
-        return vec3.transformMat4(vec3.create(), vec3.create(), mat);
-    };
-    player.behind = function () {
-        var mat = mat4.create();
-        mat4.translate(mat, this.shader.world_matrix, [0, .15, 0]);
-        return vec3.transformMat4(vec3.create(), vec3.create(), mat);
+
+    ika.physics.onmessage = function(event) {
+        player.location = event.data.player.location;
+        player.rotation_z = event.data.player.rotation_z;
     };
     
     player.add(please.access("psycho.jta").instance());

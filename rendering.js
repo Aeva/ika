@@ -106,7 +106,7 @@ ika.renderers.CollisionRenderer = function (prog, graph) {
     // collision bitmask pass
     var bitmask = new ika.renderers.Bitmask(
         prog, collision_mask, light_world, "haze.png", collision_options);
-    bitmask.frequency = 30;
+    bitmask.frequency = 12;
 
     return bitmask;
 };

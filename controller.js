@@ -54,8 +54,11 @@ ika.add_input_handler = function () {
         }
         else if (state === "press" && ika.input[key] === false) {
             ika.input[key] = performance.now();
-            ika.bump();
         }
+        ika.physics.postMessage({
+            "type" : "input",
+            "state" : ika.input,
+        });
     };
 
     please.keys.enable();
@@ -63,43 +66,4 @@ ika.add_input_handler = function () {
     please.keys.connect("left", key_handler);
     please.keys.connect("down", key_handler);
     please.keys.connect("right", key_handler);
-};
-
-
-// request the character be moved
-ika.__pending_bump = null;
-ika.bump = function () {
-    window.clearTimeout(ika.__pending_bump);
-    ika.__pending_bump = window.setTimeout(ika.__bump_call, 0);
-};
-ika.__bump_call = function () {
-    var active = false;
-    var invert = false;
-    if (!ika.input.up ^ !ika.input.down) {
-        var dir = ika.input.up ? "ahead" : "behind";
-        var target = ika.player[dir];
-        invert = dir === "behind";
-        if ((ika.mode === "human" && ika.samples[dir] !== "wall") || ika.mode === "monster") {
-            ika.player.location = target;
-        }
-        if (ika.mode === "human" && ika.samples.upon === "haze") {
-            ika.mode = "monster";
-        }
-        else if (ika.mode === "monster" && ika.samples.upon === "floor") {
-            ika.mode = "human";
-        }
-        
-        active = true;
-    }
-    if (!ika.input.left ^ !ika.input.right) {
-        var dir = ika.input.left ? 1 : -1;
-        if (invert) {
-            dir *= -1;
-        }
-        ika.player.rotation_z += 3 * dir;
-        active = true;
-    }
-    if (active) {
-        ika.bump();
-    }
 };
