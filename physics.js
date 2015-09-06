@@ -33,7 +33,7 @@
 // local namespace
 var ika = {
     "player" : {
-        "location" : [0, 0, 0],
+        "location" : [-4.5, 6.5, 0],
         "rotation_z" : 180,
     },
     "input" : {
@@ -122,27 +122,27 @@ ika.__bump_call = function () {
 ika.test_delay = null;
 ika.debug_post = function () {
     if (!ika.test_delay) {
-        ika.test_delay = setTimeout(ika.__debug_call, 100);
+        ika.test_delay = setTimeout(ika.__debug_call, 50);
     }
 };
 ika.__debug_call = function () {
-    //ika.test_delay = null;
-    var msg = "";
+    ika.test_delay = null;
+    var msg = "\n";
     for (var y=0; y<16; y+=1) {
-        msg += "> "
+        msg += "    "
         for (var x=0; x<16; x+=1) {
             //msg += ika.map[x][y] === 1.0 ? "X" : " ";
             //msg += ika.map[x][y] + " "
-            if (ika.map[x][y] === 255) {
+            if (ika.map[x][y] === 0) {
                 msg += "##";
             }
-            else if (ika.map[x][y] > 128) {
+            else if (ika.map[x][y] < 64) {
                 msg += "++";
             }
-            else if (ika.map[x][y] > 64) {
+            else if (ika.map[x][y] < 128) {
                 msg += "::";
             }
-            else if (ika.map[x][y] > 0) {
+            else if (ika.map[x][y] < 255) {
                 msg += ".'";
             }
             else {
@@ -152,7 +152,7 @@ ika.__debug_call = function () {
         }
         msg += "\n";
     }
-    console.info(msg);
+    postMessage({"map" : msg});
 };
 
 
@@ -183,8 +183,6 @@ onmessage = function (event) {
             }
         };
         ika.debug_post();
-        
-        //console.info(event.data.info.width);
         
         // This process could be possibly sped up by way of
         // "transfering" the byte array for the cache.  See:

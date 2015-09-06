@@ -67,3 +67,9 @@ ika.add_input_handler = function () {
     please.keys.connect("down", key_handler);
     please.keys.connect("right", key_handler);
 };
+
+
+ika.new_mapdata = function (map_data) {
+    var el = document.getElementById("minimap");
+    el.innerHTML = map_data;
+};

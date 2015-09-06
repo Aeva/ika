@@ -182,7 +182,7 @@ addEventListener("mgrl_media_ready", please.once(function () {
     prog.activate();
         
     // initialize the scene graphs we'll be using
-    var graph = new please.SceneGraph();
+    var graph = ika.graph = new please.SceneGraph();
 
     // Define our renderers
     ika.renderer = new please.DeferredRenderer();
@@ -198,14 +198,19 @@ addEventListener("mgrl_media_ready", please.once(function () {
     please.make_animatable(player, "ahead");
     please.make_animatable(player, "behind");
     graph.add(player);
-    player.location = [-4, 3, 0];
+    player.location = [-4.5, 6.5, 0];
     player.rotation_z = 180;
     //player.location = [43, 1, 0];
     //player.rotation_z = -70;
 
     ika.physics.onmessage = function(event) {
-        player.location = event.data.player.location;
-        player.rotation_z = event.data.player.rotation_z;
+        if (event.data.player) {
+            player.location = event.data.player.location;
+            player.rotation_z = event.data.player.rotation_z;
+        }
+        else if (event.data.map) {
+            ika.new_mapdata(event.data.map);
+        }
     };
     
     player.add(please.access("psycho.jta").instance());
