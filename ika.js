@@ -196,7 +196,8 @@ addEventListener("mgrl_media_ready", please.once(function () {
     // add a camera object to the scene graph
     var camera = ika.camera = new please.CameraNode();
     camera.look_at = function () {
-        return [player.location_x, player.location_y, player.location_z + 5];
+        //return [player.location_x, player.location_y, player.location_z + 5];
+        return [player.location_x, player.location_y, player.location_z+4];
     };
     camera.location = function () {
         var mat_a = mat4.create();
@@ -204,8 +205,8 @@ addEventListener("mgrl_media_ready", please.once(function () {
         var mat_c = mat4.create();
         mat4.translate(mat_a, mat4.create(), player.location);
         mat4.rotateZ(mat_b, mat_a, please.radians(player.rotation_z));
-        mat4.translate(mat_c, mat_b, [0.0, 9.7, 20.7]);
-        //mat4.translate(mat_c, mat_b, [0.0, 9.7, 9]);
+        //mat4.translate(mat_c, mat_b, [0.0, 9.7, 20.7]);
+        mat4.translate(mat_c, mat_b, [0.0, 5, 10]);
         
         return vec3.transformMat4(
             vec3.create(), vec3.create(), mat_c);
