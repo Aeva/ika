@@ -42,6 +42,7 @@ var ika = {
         "down" : false,
         "right" : false,
     },
+    "map" : null,
 };
 
 ika.samples = {
@@ -115,5 +116,10 @@ onmessage = function (event) {
     if (event.data.type === "input") {
         ika.input = event.data.state;
         ika.bump();
+    }
+    else if (event.data.type === "walls") {
+        var info =event.data.info;
+        var cache = event.data.cache;
+        //console.info(event.data.info.width);
     }
 };

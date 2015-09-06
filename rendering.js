@@ -108,5 +108,14 @@ ika.renderers.CollisionRenderer = function (prog, graph) {
         prog, collision_mask, light_world, "haze.png", collision_options);
     bitmask.frequency = 12;
 
+    bitmask.stream_callback = function (cache, info) {
+        ika.physics.postMessage({
+            "type" : "walls",
+            "cache" : cache,
+            "info" : info,
+        });
+
+    };
+
     return bitmask;
 };
