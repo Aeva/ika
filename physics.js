@@ -118,8 +118,12 @@ onmessage = function (event) {
         ika.bump();
     }
     else if (event.data.type === "walls") {
-        var info =event.data.info;
+        var info = event.data.info;
         var cache = event.data.cache;
         //console.info(event.data.info.width);
+        
+        // This process could be possibly sped up by way of
+        // "transfering" the byte array for the cache.  See:
+        // https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage
     }
 };
