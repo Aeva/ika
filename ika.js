@@ -183,10 +183,10 @@ addEventListener("mgrl_media_ready", please.once(function () {
     // initialize the scene graphs we'll be using
     var graph = new please.SceneGraph();
 
-
     // Define our renderers
     ika.renderer = new please.DeferredRenderer();
     ika.renderer.graph = graph;
+    ika.renderer.shader.light_texture.shader.depth_bias = 0.0;
 
     var collision_graph = new please.SceneGraph();
     ika.terrain_renderer = new ika.renderers.CollisionRenderer(

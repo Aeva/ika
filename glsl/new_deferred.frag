@@ -28,6 +28,7 @@ uniform sampler2D bg_texture;
 uniform int shader_pass;
 
 // collision
+uniform float depth_bias;
 uniform vec3 wall_type;
 
 
@@ -50,11 +51,10 @@ float illumination(vec3 _position, float _depth) {
   }
 
   if (length(light_normal) <=1.0) {
-    float bias = 1.0;
     float light_depth_1 = texture2D(light_texture, light_uv).r;
     float light_depth_2 = length(position);
-    float illuminated = step(light_depth_2, light_depth_1 + bias);
-    return illuminated;// * 0.6;
+    float illuminated = step(light_depth_2, light_depth_1 + depth_bias);
+    return illuminated;
   }
   else {
     return 0.0;

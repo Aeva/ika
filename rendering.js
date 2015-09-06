@@ -68,6 +68,7 @@ ika.renderers.CollisionRenderer = function (prog, graph) {
     collision_mask.clear_color = [0, 0, 0, 1];
     collision_mask.shader.shader_pass = 5;
     collision_mask.shader.geometry_pass = false;
+    collision_mask.shader.depth_bias = 2;
     collision_mask.shader.spatial_texture = gbuffers.buffers.spatial;
     collision_mask.render = function () {
         if (ika.renderer.graph !== null) {
