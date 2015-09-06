@@ -51,13 +51,6 @@ for (var x=0; x<16; x+=1) {
     }
 }
 
-ika.samples = {
-    "upon" : null,
-    "ahead" : null,
-    "behind" : null,
-};
-ika.mode = "human";
-
 // [+] please.radians(degrees)
 //
 // Converts from degrees to radians.
@@ -86,20 +79,12 @@ ika.__bump_call = function () {
         var vector_x = Math.sin(radians(ika.player.rotation_z + angle_mod));
         var vector_y = -Math.cos(radians(ika.player.rotation_z + angle_mod));
         
-        if ((ika.mode === "human" && ika.samples[dir] !== "wall") || ika.mode === "monster") {
-            // zero degrees faces negative y, rotation is "anti clockwise"
-            // 
-            // x = sin(angle)
-            // y = -cos(angle)
-            ika.player.location[0] += vector_x;
-            ika.player.location[1] += vector_y;
-        }
-        if (ika.mode === "human" && ika.samples.upon === "haze") {
-            ika.mode = "monster";
-        }
-        else if (ika.mode === "monster" && ika.samples.upon === "floor") {
-            ika.mode = "human";
-        }
+        // zero degrees faces negative y, rotation is "anti clockwise"
+        // 
+        // x = sin(angle)
+        // y = -cos(angle)
+        ika.player.location[0] += vector_x;
+        ika.player.location[1] += vector_y;
         
         active = true;
     }

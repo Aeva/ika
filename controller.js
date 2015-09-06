@@ -37,14 +37,6 @@ ika.input = {
     "right" : false,
 };
 
-ika.samples = {
-    "upon" : null,
-    "ahead" : null,
-    "behind" : null,
-};
-
-ika.mode = "human";
-
 
 ika.add_input_handler = function () {
     var key_handler = function (state, key) {

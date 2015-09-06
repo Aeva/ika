@@ -100,22 +100,6 @@ ika.load_room = function (asset) {
 };
 
 
-ika.px_type = function (color) {
-    if (color[0] === 255 && color[2] === 255) {
-        return "floor";
-    }
-    else if (color[0] === 255 && color[2] === 0) {
-        return "haze";
-    }
-    else if (color[0] === 0 && color[2] === 255) {
-        return "flux";
-    }
-    else if (color[0] === 0 && color[2] === 0) {
-        return "wall";
-    }
-};
-
-
 addEventListener("load", function setup () {    
     // Attach the opengl rendering context.  This must be done before
     // anything else.
@@ -142,15 +126,6 @@ addEventListener("load", function setup () {
     // maintainig a fullscreen state when the canvas has the
     // 'fullscreen' css class applied to it.
     please.pipeline.add_autoscale();
-
-    // // register a render pass with the scheduler
-    // please.pipeline.add(5, "project/collision", function () {
-    //     var canvas = please.gl.canvas;
-    //     please.render(ika.collision_pass);
-    //     ika.samples.upon = ika.px_type(please.gl.pick(0.5, 0.5));
-    //     ika.samples.ahead = ika.px_type(please.gl.pick(0.5, 0.47));
-    //     ika.samples.behind = ika.px_type(please.gl.pick(0.5, 0.57));
-    // }).skip_when(function () { return ika.collision_pass === undefined });
 
     // register a render pass with the scheduler
     please.pipeline.add(10, "project/draw", function () {
@@ -200,8 +175,6 @@ addEventListener("mgrl_media_ready", please.once(function () {
     graph.add(player);
     player.location = [-4.5, 6.5, 0];
     player.rotation_z = 180;
-    //player.location = [43, 1, 0];
-    //player.rotation_z = -70;
 
     ika.physics.onmessage = function(event) {
         if (event.data.player) {
