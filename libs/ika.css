@@ -42,13 +42,15 @@ canvas {
 
 #minimap {
     position: fixed;
-    width: 25em;
+    width: 22.5em;
     height: 21.5em;
-    bottom: 0px;
-    right: 0px;
+    bottom: 32px;
+    right: 32px;
     z-index: 15;
-    background-color: rgba(255,255,255,0.5);
+    background-color: rgba(255,255,255,0.75);
     color: black;
+    border: 1px solid black;
+    border-radius: 4px;
     white-space: pre;
     font-family: monospace;
     font-size: 16px;

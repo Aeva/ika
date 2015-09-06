@@ -90,6 +90,7 @@ ika.renderers.CollisionRenderer = function (prog, graph) {
             gl.disable(gl.BLEND);
             gl.disable(gl.CULL_FACE);
             gl.enable(gl.DEPTH_TEST);
+            this.locus = this.graph.camera.look_at;
         }
     };
 
@@ -113,6 +114,7 @@ ika.renderers.CollisionRenderer = function (prog, graph) {
             "type" : "walls",
             "cache" : cache,
             "info" : info,
+            "locus" : collision_mask.locus,
         });
 
     };

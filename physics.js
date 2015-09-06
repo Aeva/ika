@@ -127,9 +127,9 @@ ika.debug_post = function () {
 };
 ika.__debug_call = function () {
     ika.test_delay = null;
-    var msg = "\n";
+    var msg = " origin: " + ika.map.locus[0] + ", " + ika.map.locus[1] + "\n";
     for (var y=0; y<16; y+=1) {
-        msg += "    "
+        msg += "  "
         for (var x=0; x<16; x+=1) {
             //msg += ika.map[x][y] === 1.0 ? "X" : " ";
             //msg += ika.map[x][y] + " "
@@ -152,6 +152,11 @@ ika.__debug_call = function () {
         }
         msg += "\n";
     }
+    var x_diff = ika.player.location[0] - ika.map.locus[0];
+    var y_diff = ika.player.location[1] - ika.map.locus[1];
+    x_diff = x_diff.toString().slice(0,5);
+    y_diff = y_diff.toString().slice(0,5);
+    msg += " local diff: " + x_diff + ", " + y_diff;
     postMessage({"map" : msg});
 };
 
@@ -165,6 +170,7 @@ onmessage = function (event) {
     else if (event.data.type === "walls") {
         var info = event.data.info;
         var cache = event.data.cache;
+        var locus = event.data.locus;
 
         var x=0;
         var y=15;
@@ -182,6 +188,7 @@ onmessage = function (event) {
                 y-=1;
             }
         };
+        ika.map.locus = locus;
         ika.debug_post();
         
         // This process could be possibly sped up by way of
