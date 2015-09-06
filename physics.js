@@ -30,6 +30,23 @@
 "use strict";
 
 
+// [+] please.radians(degrees)
+//
+// Converts from degrees to radians.
+//
+// - **degrees** An angular value expressed in dgersee.
+//
+var radians = function (degrees) {
+    return degrees*(Math.PI/180);
+};
+
+
+// linear interpoltaion function
+var mix = function (lhs, rhs, a) {
+    return lhs + a*(rhs-lhs);
+};
+
+
 // local namespace
 var ika = {
     "player" : {
@@ -51,15 +68,59 @@ for (var x=0; x<16; x+=1) {
     }
 }
 
-// [+] please.radians(degrees)
-//
-// Converts from degrees to radians.
-//
-// - **degrees** An angular value expressed in dgersee.
-//
-var radians = function (degrees) {
-    return degrees*(Math.PI/180);
+
+
+
+// returns true for clear and false for wall
+ika.pick = function(world_x, world_y) {
+    var local_x = (world_x - ika.map.locus[0]) + 8;
+    var local_y = ((world_y - ika.map.locus[1])*-1) + 8;
+    console.info("local_x: " + local_x);
+    console.info("local_y: " + local_y);
+    if (Math.abs(local_x-8) > 7 || Math.abs(local_y-8) > 7) {
+        return false;
+    }
+    else {
+        var floor_x = Math.floor(local_x);
+        var floor_y = Math.floor(local_y);
+        var ceil_x = Math.ceil(local_x);
+        var ceil_y = Math.ceil(local_y);
+        var fract_x = local_x - floor_x;
+        var fract_y = local_y - floor_y;
+
+        console.info("x: " + floor_x + ", " + ceil_x + ", " + fract_x);
+        console.info("y: " + floor_y + ", " + ceil_y + ", " + fract_y);
+
+        var nw = Math.ceil(ika.map[floor_x][ceil_y]/255);
+        var ne = Math.ceil(ika.map[ceil_x][ceil_y]/255);
+        var sw = Math.ceil(ika.map[floor_x][floor_y]/255);
+        var se = Math.ceil(ika.map[ceil_x][floor_y]/255);
+
+        var north = mix(nw, ne, fract_x);
+        var south = mix(sw, se, fract_x);
+        var found = mix(south, north, fract_y);
+
+        var reading = "" + nw + ":" + ne + "\n" + sw + ":" + se;
+        console.info(reading);
+                
+        console.info(found);
+        return found > 0.25;
+    }
 };
+
+
+
+
+// returns the offset to move one unit in the given angle
+ika.vector = function (angle, unit) {
+    // zero degrees faces negative y, rotation is "anti clockwise"
+    // x = sin(angle)
+    // y = -cos(angle)
+    var rad = radians(angle);
+    return [Math.sin(rad)*unit, -Math.cos(rad)*unit];
+};
+
+
 
 
 // request the character be moved
@@ -76,15 +137,16 @@ ika.__bump_call = function () {
         var target = ika.player[dir];
         invert = dir === "behind";
         var angle_mod = dir === "ahead" ? 0 : 180;
-        var vector_x = Math.sin(radians(ika.player.rotation_z + angle_mod));
-        var vector_y = -Math.cos(radians(ika.player.rotation_z + angle_mod));
-        
-        // zero degrees faces negative y, rotation is "anti clockwise"
-        // 
-        // x = sin(angle)
-        // y = -cos(angle)
-        ika.player.location[0] += vector_x;
-        ika.player.location[1] += vector_y;
+        var angle = ika.player.rotation_z + angle_mod;
+        var dist = 0.5;
+        var vector = ika.vector(angle, dist);
+
+        var test_x = ika.player.location[0] + vector[0];
+        var test_y = ika.player.location[1] + vector[1];
+        if (ika.pick(test_x, test_y)) {
+            ika.player.location[0] = test_x;
+            ika.player.location[1] = test_y;
+        }
         
         active = true;
     }
