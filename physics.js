@@ -42,8 +42,14 @@ var ika = {
         "down" : false,
         "right" : false,
     },
-    "map" : null,
+    "map" : [],
 };
+for (var x=0; x<16; x+=1) {
+    ika.map.push([]);
+    for (var y=0; y<16; y+=1) {
+        ika.map[x].push(0);
+    }
+}
 
 ika.samples = {
     "upon" : null,
@@ -112,6 +118,45 @@ ika.__bump_call = function () {
 };
 
 
+
+ika.test_delay = null;
+ika.debug_post = function () {
+    if (!ika.test_delay) {
+        ika.test_delay = setTimeout(ika.__debug_call, 100);
+    }
+};
+ika.__debug_call = function () {
+    //ika.test_delay = null;
+    var msg = "";
+    for (var y=0; y<16; y+=1) {
+        msg += "> "
+        for (var x=0; x<16; x+=1) {
+            //msg += ika.map[x][y] === 1.0 ? "X" : " ";
+            //msg += ika.map[x][y] + " "
+            if (ika.map[x][y] === 255) {
+                msg += "##";
+            }
+            else if (ika.map[x][y] > 128) {
+                msg += "++";
+            }
+            else if (ika.map[x][y] > 64) {
+                msg += "::";
+            }
+            else if (ika.map[x][y] > 0) {
+                msg += ".'";
+            }
+            else {
+                msg += "  ";
+            }
+
+        }
+        msg += "\n";
+    }
+    console.info(msg);
+};
+
+
+
 onmessage = function (event) {
     if (event.data.type === "input") {
         ika.input = event.data.state;
@@ -120,6 +165,25 @@ onmessage = function (event) {
     else if (event.data.type === "walls") {
         var info = event.data.info;
         var cache = event.data.cache;
+
+        var x=0;
+        var y=15;
+        var data;
+        
+        for (var i=0; i<cache.length; i+= 4) {
+            data = cache.slice(i, i+4);
+            //if (data[0] === data[1] === data[2]) {
+            ika.map[x][y] = (data[0] + data[1] + data[2])/3;
+            //}
+            
+            x+=1;
+            if (x >= 16) {
+                x=0;
+                y-=1;
+            }
+        };
+        ika.debug_post();
+        
         //console.info(event.data.info.width);
         
         // This process could be possibly sped up by way of
