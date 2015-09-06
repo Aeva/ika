@@ -146,19 +146,26 @@ ika.move_player = function (angle, dist) {
         ika.player.location[1] = check[1];
     }
     else {
-        while (veer <= max_veer) {
-            veer += veer_angle;
-            var speed = mix(0.8, 0.1, (veer-veer_angle)/max_veer);
-            var rhs = ika.pick_vector(angle + veer, dist*speed);
-            var lhs = ika.pick_vector(angle + veer*-1, dist*speed);
-            if (!!rhs != !!lhs) {
-                check = rhs ? rhs : lhs;
-                ika.player.location[0] = check[0];
-                ika.player.location[1] = check[1];
-                break;
-            }
-            else if (rhs && lhs) {
-                break;
+        check = ika.pick_vector(angle, dist * 0.5);
+        if (check) {
+            ika.player.location[0] = check[0];
+            ika.player.location[1] = check[1];
+        }
+        else {
+            while (veer <= max_veer) {
+                veer += veer_angle;
+                var speed = mix(0.8, 0.1, (veer-veer_angle)/max_veer);
+                var rhs = ika.pick_vector(angle + veer, dist*speed);
+                var lhs = ika.pick_vector(angle + veer*-1, dist*speed);
+                if (!!rhs != !!lhs) {
+                    check = rhs ? rhs : lhs;
+                    ika.player.location[0] = check[0];
+                    ika.player.location[1] = check[1];
+                    break;
+                }
+                else if (rhs && lhs) {
+                    break;
+                }
             }
         }
     }
