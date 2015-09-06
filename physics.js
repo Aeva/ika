@@ -75,8 +75,6 @@ for (var x=0; x<16; x+=1) {
 ika.pick = function(world_x, world_y) {
     var local_x = (world_x - ika.map.locus[0]) + 8;
     var local_y = ((world_y - ika.map.locus[1])*-1) + 8;
-    console.info("local_x: " + local_x);
-    console.info("local_y: " + local_y);
     if (Math.abs(local_x-8) > 7 || Math.abs(local_y-8) > 7) {
         return false;
     }
@@ -88,9 +86,6 @@ ika.pick = function(world_x, world_y) {
         var fract_x = local_x - floor_x;
         var fract_y = local_y - floor_y;
 
-        console.info("x: " + floor_x + ", " + ceil_x + ", " + fract_x);
-        console.info("y: " + floor_y + ", " + ceil_y + ", " + fract_y);
-
         var nw = Math.ceil(ika.map[floor_x][ceil_y]/255);
         var ne = Math.ceil(ika.map[ceil_x][ceil_y]/255);
         var sw = Math.ceil(ika.map[floor_x][floor_y]/255);
@@ -101,9 +96,8 @@ ika.pick = function(world_x, world_y) {
         var found = mix(south, north, fract_y);
 
         var reading = "" + nw + ":" + ne + "\n" + sw + ":" + se;
-        console.info(reading);
-                
-        console.info(found);
+        // console.info(reading);
+        // console.info(found);
         return found == 1.0;
     }
 };
@@ -123,6 +117,56 @@ ika.vector = function (angle, unit) {
 
 
 
+// calls ika.pick, relative to the player
+ika.pick_vector = function (angle, dist) {
+    var vector = ika.vector(angle, dist);
+    var test_x = ika.player.location[0] + vector[0];
+    var test_y = ika.player.location[1] + vector[1];
+
+    if (ika.pick(test_x, test_y)) {
+        return [test_x, test_y];
+    }
+    else {
+        return false;
+    }
+};
+
+
+
+
+//
+ika.move_player = function (angle, dist) {
+    var veer = 0;
+    var veer_angle = 15;
+    var max_veer = 75;
+
+    var check = ika.pick_vector(angle, dist);
+    if (check) {
+        ika.player.location[0] = check[0];
+        ika.player.location[1] = check[1];
+    }
+    else {
+        while (veer <= max_veer) {
+            veer += veer_angle;
+            var speed = mix(0.8, 0.1, (veer-veer_angle)/max_veer);
+            var rhs = ika.pick_vector(angle + veer, dist*speed);
+            var lhs = ika.pick_vector(angle + veer*-1, dist*speed);
+            if (!!rhs != !!lhs) {
+                check = rhs ? rhs : lhs;
+                ika.player.location[0] = check[0];
+                ika.player.location[1] = check[1];
+                break;
+            }
+            else if (rhs && lhs) {
+                break;
+            }
+        }
+    }
+};
+
+
+
+
 // request the character be moved
 ika.pending_bump = null;
 ika.bump = function () {
@@ -133,21 +177,9 @@ ika.__bump_call = function () {
     var active = false;
     var invert = false;
     if (!ika.input.up ^ !ika.input.down) {
-        var dir = ika.input.up ? "ahead" : "behind";
-        var target = ika.player[dir];
-        invert = dir === "behind";
-        var angle_mod = dir === "ahead" ? 0 : 180;
-        var angle = ika.player.rotation_z + angle_mod;
-        var dist = 0.5;
-        var vector = ika.vector(angle, dist);
-
-        var test_x = ika.player.location[0] + vector[0];
-        var test_y = ika.player.location[1] + vector[1];
-        if (ika.pick(test_x, test_y)) {
-            ika.player.location[0] = test_x;
-            ika.player.location[1] = test_y;
-        }
-        
+        var dist = ika.input.up ? 0.275 : -0.15;
+        var angle = ika.player.rotation_z;
+        ika.move_player(angle, dist);        
         active = true;
     }
     if (!ika.input.left ^ !ika.input.right) {
