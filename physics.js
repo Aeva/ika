@@ -73,8 +73,8 @@ for (var x=0; x<16; x+=1) {
 
 // returns true for clear and false for wall
 ika.pick = function(world_x, world_y) {
-    var local_x = (world_x - ika.map.locus[0]) + 8;
-    var local_y = ((world_y - ika.map.locus[1])*-1) + 8;
+    var local_x = (world_x - ika.map.locus[0]) + 7.5;
+    var local_y = ((world_y - ika.map.locus[1])*-1) + 7.5;
     if (Math.abs(local_x-8) > 7 || Math.abs(local_y-8) > 7) {
         return false;
     }
