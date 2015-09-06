@@ -104,7 +104,7 @@ ika.pick = function(world_x, world_y) {
         console.info(reading);
                 
         console.info(found);
-        return found > 0.25;
+        return found == 1.0;
     }
 };
 
