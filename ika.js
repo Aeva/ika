@@ -187,7 +187,7 @@ addEventListener("mgrl_media_ready", please.once(function () {
     };
     
     player.add(please.access("psycho.jta").instance());
-
+    player.propogate(function (node) {node.cast_shadows = false; });
 
     // connect the input handler
     ika.add_input_handler();
