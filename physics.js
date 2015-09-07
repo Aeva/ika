@@ -98,7 +98,7 @@ ika.pick = function(world_x, world_y) {
         var reading = "" + nw + ":" + ne + "\n" + sw + ":" + se;
         // console.info(reading);
         // console.info(found);
-        return found >= 0.5;
+        return found >= 0.75;
     }
 };
 
