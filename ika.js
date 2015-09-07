@@ -52,6 +52,10 @@ var ika = {
 
 
 ika.load_room = function (asset) {
+    // build and activate the custom shader program
+    var prog = please.gl.get_program("mgrl_illumination");
+    prog.activate();
+
     var model = please.access(asset).instance();
     var visible = [];
     var display = new please.GraphNode();
@@ -67,11 +71,13 @@ ika.load_room = function (asset) {
         if (child.node_name.startsWith("wall")) {
             child.__regen_glsl_bindings();
             child.shader.wall_type = [0,0,0];
+            child.shader.diffuse_texture = "girl_with_headphones.png";
             collision.add(child);
         }
         else if (child.node_name.startsWith("floor")) {
             child.__regen_glsl_bindings();
             child.shader.wall_type = [1,1,1];
+            child.shader.diffuse_texture = "girl_with_headphones.png";
             collision.add(child);
         }
         else {
@@ -245,7 +251,7 @@ addEventListener("mgrl_media_ready", please.once(function () {
 
 
     //var room_data = ika.load_room("forest_path.jta");
-    var room_data = ika.load_room("test_level.jta");
+    var room_data = ika.room_data = ika.load_room("test_level.jta");
     graph.add(room_data.display);
     collision_graph.add(room_data.collision);
 
