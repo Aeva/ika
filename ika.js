@@ -37,6 +37,7 @@ var ika = {
         "cube.jta",
         "test_level.jta",
         "test_level_bake.png",
+        "second_space.jta",
         // "forest_path.jta",
         // "forest_path_bake.png",
         "haze.png",
@@ -164,13 +165,17 @@ addEventListener("mgrl_media_ready", please.once(function () {
         
     // initialize the scene graphs we'll be using
     var graph = ika.graph = new please.SceneGraph();
+    var second_graph = new please.SceneGraph();
 
     // Define our renderers
     ika.renderer = new please.DeferredRenderer();
     ika.renderer.graph = graph;
     ika.renderer.shader.light_texture.shader.depth_bias = 0.0;
 
+    ika.second_renderer = new ika.renderers.SecondSpace(prog, second_graph);
+
     var collision_graph = new please.SceneGraph();
+    var second_collision_graph = new please.SceneGraph();
     ika.terrain_renderer = new ika.renderers.CollisionRenderer(
         prog, collision_graph);
 
@@ -203,24 +208,32 @@ addEventListener("mgrl_media_ready", please.once(function () {
     var camera = ika.camera = new please.CameraNode();
     camera.look_at = function () {
         //return [player.location_x, player.location_y, player.location_z + 5];
-        return [player.location_x, player.location_y, player.location_z+4];
+        //return [player.location_x, player.location_y, player.location_z+4];
+        return [0, 0, 0];
     };
     camera.location = function () {
-        var mat_a = mat4.create();
-        var mat_b = mat4.create();
-        var mat_c = mat4.create();
-        mat4.translate(mat_a, mat4.create(), player.location);
-        mat4.rotateZ(mat_b, mat_a, please.radians(player.rotation_z));
-        //mat4.translate(mat_c, mat_b, [0.0, 9.7, 20.7]);
-        mat4.translate(mat_c, mat_b, [0.0, 5, 10]);
+        // var mat_a = mat4.create();
+        // var mat_b = mat4.create();
+        // var mat_c = mat4.create();
+        // mat4.translate(mat_a, mat4.create(), player.location);
+        // mat4.rotateZ(mat_b, mat_a, please.radians(player.rotation_z));
+        // //mat4.translate(mat_c, mat_b, [0.0, 9.7, 20.7]);
+        // mat4.translate(mat_c, mat_b, [0.0, 5, 10]);
         
-        return vec3.transformMat4(
-            vec3.create(), vec3.create(), mat_c);
+        // return vec3.transformMat4(
+        //     vec3.create(), vec3.create(), mat_c);
+        return [0, -1, 20];
     };
     camera.fov = 80;
 
     graph.add(camera);
     camera.activate();
+
+    var second_camera = new please.CameraNode();
+    second_camera.look_at = function () { return camera.look_at; }
+    second_camera.location = function () { return camera.location; }
+    second_camera.fov = function () { return camera.fov; }
+    second_graph.add(second_camera);
 
 
 
@@ -255,10 +268,16 @@ addEventListener("mgrl_media_ready", please.once(function () {
     graph.add(room_data.display);
     collision_graph.add(room_data.collision);
 
-    
+
+    var second_space = ika.second_space = ika.load_room("second_space.jta");
+    second_graph.add(second_space.display);
+    second_collision_graph.add(second_space.collision);
+
+        
     // light test
     var light = new please.SpotLightNode();
     light.location = [10, -14, 17];
+    light.location_x = please.oscillating_driver(-10, 20, 5000);
     light.look_at = [0, 0, 5];
     light.fov = 45;
     graph.add(light);
@@ -272,7 +291,7 @@ addEventListener("mgrl_media_ready", please.once(function () {
 
     // main bitmask pass
     var bitmask = new ika.renderers.Bitmask(
-        prog, ika.renderer.shader.light_texture, ika.renderer, "haze.png");
+        prog, ika.renderer.shader.light_texture, ika.renderer, ika.second_renderer);
     bitmask.frequency = 30;
     
     var pip = new please.PictureInPicture();

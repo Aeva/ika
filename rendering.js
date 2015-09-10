@@ -36,10 +36,27 @@ ika.renderers = {};
 ika.renderers.Bitmask = function (prog, mask, fg, bg, options) {
     var bitmask = new please.RenderNode(prog, options);
     bitmask.shader.shader_pass = 4;
+    bitmask.shader.geometry_pass = false;
     bitmask.shader.mask_texture = mask;
     bitmask.shader.fg_texture = fg;
     bitmask.shader.bg_texture = bg;
     return bitmask;
+};
+
+
+ika.renderers.SecondSpace = function (prog, graph) {
+    var gbuffer_options = {
+        "width" : 256,
+        "height" : 256,
+        "buffers" : ["color", "spatial"],
+        "type": gl.FLOAT,
+    };
+    var node = new please.RenderNode(prog, gbuffer_options);
+    node.shader.shader_pass = 0;
+    node.shader.geometry_pass = true;
+    node.graph = graph;
+    node.clear_color = [0.2, 0.2, 0.2, 1.0];
+    return node;
 };
 
 
