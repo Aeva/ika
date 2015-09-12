@@ -140,6 +140,7 @@ ika.move_player = function (angle, dist) {
     var veer_angle = 15;
     var max_veer = 75;
 
+    ika.player.rotation_z = angle;
     var check = ika.pick_vector(angle, dist);
     if (check) {
         ika.player.location[0] = check[0];
@@ -150,6 +151,7 @@ ika.move_player = function (angle, dist) {
         if (check) {
             ika.player.location[0] = check[0];
             ika.player.location[1] = check[1];
+            //ika.player.rotation_z = angle;
         }
         else {
             while (veer <= max_veer) {
@@ -161,6 +163,7 @@ ika.move_player = function (angle, dist) {
                     check = rhs ? rhs : lhs;
                     ika.player.location[0] = check[0];
                     ika.player.location[1] = check[1];
+                    //ika.player.rotation_z = angle + veer * (rhs ? 1 : -1);
                     break;
                 }
                 else if (rhs && lhs) {
@@ -183,18 +186,28 @@ ika.bump = function () {
 ika.__bump_call = function () {
     var active = false;
     var invert = false;
-    if (!ika.input.up ^ !ika.input.down) {
-        var dist = ika.input.up ? 0.275 : -0.15;
-        var angle = ika.player.rotation_z;
-        ika.move_player(angle, dist);        
-        active = true;
+
+    var angle = null;
+    if (ika.input.up && ika.input.left) {
+        angle = 225;
     }
-    if (!ika.input.left ^ !ika.input.right) {
-        var dir = ika.input.left ? 1 : -1;
-        if (invert) {
-            dir *= -1;
-        }
-        ika.player.rotation_z += 3 * dir;
+    else if (ika.input.up && ika.input.right) {
+        angle = 135;
+    }
+    else if (ika.input.down && ika.input.left) {
+        angle = -45;
+    }
+    else if (ika.input.down && ika.input.right) {
+        angle = 45;
+    }
+    else if (!ika.input.up ^ !ika.input.down) {
+        angle = ika.input.up? 180 : 0;
+    }
+    else if (!ika.input.left ^ !ika.input.right) {
+        angle = ika.input.left? -90 : 90;
+    }
+    if (angle !== null) {
+        ika.move_player(angle, 0.275);
         active = true;
     }
     if (active) {
