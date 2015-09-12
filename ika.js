@@ -203,6 +203,13 @@ addEventListener("mgrl_media_ready", please.once(function () {
     // connect the input handler
     ika.add_input_handler();
 
+    // add a secondspace double for our player
+    var doppel = please.access("cube.jta").instance();
+    doppel.location = function () { return player.location; };
+    doppel.rotation = function () { return player.rotation; };
+    doppel.shader.diffuse_texture = "girl_with_headphones.png";
+    second_graph.add(doppel);
+
     
     // add a camera object to the scene graph
     var camera = ika.camera = new please.CameraNode();
