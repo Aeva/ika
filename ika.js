@@ -137,8 +137,8 @@ addEventListener("load", function setup () {
     // register a render pass with the scheduler
     please.pipeline.add(10, "project/draw", function () {
         if (ika.terrain_renderer && ika.second_terrain_renderer) {
+            //please.indirect_render(ika.second_terrain_renderer);
             please.indirect_render(ika.terrain_renderer);
-            please.indirect_render(ika.second_terrain_renderer);
         };
         please.render(ika.viewport);
     }).skip_when(function () { return ika.viewport === null; });
@@ -180,10 +180,9 @@ addEventListener("mgrl_media_ready", please.once(function () {
 
     var collision_graph = new please.SceneGraph();
     var second_collision_graph = new please.SceneGraph();
+    ika.second_terrain_renderer = new ika.renderers.CollisionDataRenderer(prog, second_collision_graph, true);
     ika.terrain_renderer = new ika.renderers.CollisionRenderer(
-        prog, collision_graph);
-    ika.second_terrain_renderer = new ika.renderers.SecondSpace(
-        prog, second_collision_graph);
+        prog, collision_graph);    
 
     // add a handle for our player
     var player = ika.player = new please.GraphNode();

@@ -137,4 +137,8 @@ void main(void) {
       gl_FragData[0] = vec4(wall_type, 1.0);
     }
   }
+  else if (shader_pass == 7) {
+    // render collision data as a geometry pass
+    gl_FragData[0] = vec4(wall_type, 1.0);
+  }
 }

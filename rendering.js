@@ -60,6 +60,22 @@ ika.renderers.SecondSpace = function (prog, graph) {
 };
 
 
+ika.renderers.CollisionDataRenderer = function (prog, graph, geometric) {
+    var collision_options = {
+        "width" : 16,
+        "height" : 16,
+        "buffers" : ["color"],
+    };
+    var realm = new please.RenderNode(prog, collision_options);
+    realm.graph = graph;
+    realm.clear_color = [0, 0, 0, 1];
+    realm.shader.shader_pass = 6;
+    realm.shader.geometry_pass = !!(geometric);
+
+    return realm;
+}
+
+
 ika.renderers.CollisionRenderer = function (prog, graph) {
     // extra gbuffer pass for collision detection
     var gbuffer_options = {
@@ -113,17 +129,17 @@ ika.renderers.CollisionRenderer = function (prog, graph) {
 
     
     // light world collision data
-    var light_world = new please.RenderNode(prog, collision_options);
-    light_world.graph = graph;
-    light_world.clear_color = [0, 0, 0, 1];
-    light_world.shader.shader_pass = 6;
-    light_world.shader.geometry_pass = false;
+    var light_world = new ika.renderers.CollisionDataRenderer(prog, graph);
     light_world.shader.spatial_texture = gbuffers.buffers.spatial;
 
     
     // collision bitmask pass
     var bitmask = new ika.renderers.Bitmask(
-        prog, collision_mask, light_world, ika.second_terrain_renderer, collision_options);
+        prog,
+        collision_mask,
+        light_world,
+        ika.second_terrain_renderer,
+        collision_options);
     bitmask.frequency = 12;
 
     bitmask.stream_callback = function (cache, info) {
@@ -133,7 +149,6 @@ ika.renderers.CollisionRenderer = function (prog, graph) {
             "info" : info,
             "locus" : collision_mask.locus,
         });
-
     };
 
     return bitmask;
