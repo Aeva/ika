@@ -86,10 +86,10 @@ ika.pick = function(world_x, world_y) {
         var fract_x = local_x - floor_x;
         var fract_y = local_y - floor_y;
 
-        var nw = Math.ceil(ika.map[floor_x][ceil_y]/255);
-        var ne = Math.ceil(ika.map[ceil_x][ceil_y]/255);
-        var sw = Math.ceil(ika.map[floor_x][floor_y]/255);
-        var se = Math.ceil(ika.map[ceil_x][floor_y]/255);
+        var nw = Math.floor(ika.map[floor_x][ceil_y]/255);
+        var ne = Math.floor(ika.map[ceil_x][ceil_y]/255);
+        var sw = Math.floor(ika.map[floor_x][floor_y]/255);
+        var se = Math.floor(ika.map[ceil_x][floor_y]/255);
 
         var north = mix(nw, ne, fract_x);
         var south = mix(sw, se, fract_x);
