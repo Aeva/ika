@@ -136,6 +136,10 @@ addEventListener("load", function setup () {
 
     // register a render pass with the scheduler
     please.pipeline.add(10, "project/draw", function () {
+        if (ika.terrain_renderer && ika.second_terrain_renderer) {
+            please.indirect_render(ika.terrain_renderer);
+            please.indirect_render(ika.second_terrain_renderer);
+        };
         please.render(ika.viewport);
     }).skip_when(function () { return ika.viewport === null; });
 
@@ -178,6 +182,8 @@ addEventListener("mgrl_media_ready", please.once(function () {
     var second_collision_graph = new please.SceneGraph();
     ika.terrain_renderer = new ika.renderers.CollisionRenderer(
         prog, collision_graph);
+    ika.second_terrain_renderer = new ika.renderers.SecondSpace(
+        prog, second_collision_graph);
 
     // add a handle for our player
     var player = ika.player = new please.GraphNode();
@@ -269,6 +275,16 @@ addEventListener("mgrl_media_ready", please.once(function () {
     collision_graph.add(ortho);
     ortho.activate();
 
+    var second_ortho = new please.CameraNode();
+    second_ortho.set_orthographic();
+    second_ortho.width = 256;
+    second_ortho.height = 256
+    second_ortho.look_at = function () { return ortho.look_at; };
+    second_ortho.location = function () { return ortho.location; };
+    second_ortho.up_vector = function () { return ortho.up_vector; };
+    second_collision_graph.add(second_ortho);
+    second_ortho.activate();
+
 
     //var room_data = ika.load_room("forest_path.jta");
     var room_data = ika.room_data = ika.load_room("test_level.jta");
@@ -303,9 +319,10 @@ addEventListener("mgrl_media_ready", please.once(function () {
     
     var pip = new please.PictureInPicture();
     pip.shader.main_texture = bitmask;
-    pip.shader.pip_texture = ika.terrain_renderer;
+    pip.shader.pip_texture = ika.second_terrain_renderer;
+    //pip.shader.pip_texture = ika.terrain_renderer;
     
     // Transition from the loading screen prefab to our renderer
-    //ika.viewport.raise_curtains(ika.bitmask);
+    //ika.viewport.raise_curtains(bitmask);
     ika.viewport.raise_curtains(pip);
 }));

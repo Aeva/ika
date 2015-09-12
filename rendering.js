@@ -88,7 +88,7 @@ ika.renderers.CollisionRenderer = function (prog, graph) {
     collision_mask.shader.depth_bias = 2;
     collision_mask.shader.spatial_texture = gbuffers.buffers.spatial;
     collision_mask.render = function () {
-        if (ika.renderer.graph !== null) {
+        if (ika.renderer.graph !== null && ika.renderer.shader.light_texture.targets) {
             gl.disable(gl.DEPTH_TEST);
             gl.enable(gl.CULL_FACE);
             gl.enable(gl.BLEND);
@@ -123,7 +123,7 @@ ika.renderers.CollisionRenderer = function (prog, graph) {
     
     // collision bitmask pass
     var bitmask = new ika.renderers.Bitmask(
-        prog, collision_mask, light_world, "haze.png", collision_options);
+        prog, collision_mask, light_world, ika.second_terrain_renderer, collision_options);
     bitmask.frequency = 12;
 
     bitmask.stream_callback = function (cache, info) {

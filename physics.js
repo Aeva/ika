@@ -271,6 +271,10 @@ onmessage = function (event) {
         var cache = event.data.cache;
         var locus = event.data.locus;
 
+        if (!locus || !cache) {
+            return;
+        }
+
         var x=0;
         var y=15;
         var data;
