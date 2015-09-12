@@ -46,8 +46,8 @@ ika.renderers.Bitmask = function (prog, mask, fg, bg, options) {
 
 ika.renderers.SecondSpace = function (prog, graph) {
     var gbuffer_options = {
-        "width" : 256,
-        "height" : 256,
+        "width" : 512,
+        "height" : 512,
         "buffers" : ["color", "spatial"],
         "type": gl.FLOAT,
     };
@@ -63,8 +63,8 @@ ika.renderers.SecondSpace = function (prog, graph) {
 ika.renderers.CollisionRenderer = function (prog, graph) {
     // extra gbuffer pass for collision detection
     var gbuffer_options = {
-        "width" : 256,
-        "height" : 256,
+        "width" : 512,
+        "height" : 512,
         "buffers" : ["color", "spatial"],
         "type": gl.FLOAT,
     };
