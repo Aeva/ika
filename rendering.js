@@ -68,7 +68,7 @@ ika.renderers.CollisionDataRenderer = function (prog, graph, geometric) {
     };
     var realm = new please.RenderNode(prog, collision_options);
     realm.graph = graph;
-    realm.clear_color = [0, 0, 0, 1];
+    realm.clear_color = [.5, .5, .5, 1];
     realm.shader.shader_pass = 6;
     realm.shader.geometry_pass = !!(geometric);
 
