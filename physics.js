@@ -230,24 +230,41 @@ ika.__debug_call = function () {
     for (var y=0; y<16; y+=1) {
         msg += "  "
         for (var x=0; x<16; x+=1) {
-            //msg += ika.map[x][y] === 1.0 ? "X" : " ";
-            //msg += ika.map[x][y] + " "
-            if (ika.map[x][y] === 0) {
-                msg += "##";
-            }
-            else if (ika.map[x][y] < 64) {
-                msg += "++";
-            }
-            else if (ika.map[x][y] < 128) {
-                msg += "::";
-            }
-            else if (ika.map[x][y] < 255) {
-                msg += ".'";
+            if (x == 8 && y == 8) {
+                msg += "@";
+                if (ika.map[x][y] === 0) {
+                    msg += "#";
+                }
+                else if (ika.map[x][y] < 64) {
+                    msg += "+";
+                }
+                else if (ika.map[x][y] < 128) {
+                    msg += ":";
+                }
+                else if (ika.map[x][y] < 255) {
+                    msg += "'";
+                }
+                else {
+                    msg += " ";
+                }
             }
             else {
-                msg += "  ";
+                if (ika.map[x][y] === 0) {
+                    msg += "##";
+                }
+                else if (ika.map[x][y] < 64) {
+                    msg += "++";
+                }
+                else if (ika.map[x][y] < 128) {
+                    msg += "::";
+                }
+                else if (ika.map[x][y] < 255) {
+                    msg += ".'";
+                }
+                else {
+                    msg += "  ";
+                }
             }
-
         }
         msg += "\n";
     }
