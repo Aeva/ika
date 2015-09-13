@@ -42,6 +42,7 @@ var ika = {
         // "forest_path_bake.png",
         "haze.png",
         "psycho_bake.png",
+        "psycho_bake_red.png",
         "psycho.jta",
 
         //"meta.frag",
@@ -210,10 +211,10 @@ addEventListener("mgrl_media_ready", please.once(function () {
     ika.add_input_handler();
 
     // add a secondspace double for our player
-    var doppel = please.access("cube.jta").instance();
+    var doppel = please.access("psycho.jta").instance();
+    doppel.shader.diffuse_texture = "psycho_bake_red.png";
     doppel.location = function () { return player.location; };
     doppel.rotation = function () { return player.rotation; };
-    doppel.shader.diffuse_texture = "girl_with_headphones.png";
     second_graph.add(doppel);
 
     
@@ -317,12 +318,12 @@ addEventListener("mgrl_media_ready", please.once(function () {
         prog, ika.renderer.shader.light_texture, ika.renderer, ika.second_renderer);
     bitmask.frequency = 30;
     
-    var pip = new please.PictureInPicture();
-    pip.shader.main_texture = bitmask;
-    pip.shader.pip_texture = ika.second_terrain_renderer;
-    //pip.shader.pip_texture = ika.terrain_renderer;
+    // var pip = new please.PictureInPicture();
+    // pip.shader.main_texture = bitmask;
+    // pip.shader.pip_texture = ika.second_terrain_renderer;
+    // //pip.shader.pip_texture = ika.terrain_renderer;
     
     // Transition from the loading screen prefab to our renderer
-    //ika.viewport.raise_curtains(bitmask);
-    ika.viewport.raise_curtains(pip);
+    ika.viewport.raise_curtains(bitmask);
+    //ika.viewport.raise_curtains(pip);
 }));
