@@ -181,8 +181,9 @@ addEventListener("mgrl_media_ready", please.once(function () {
     var collision_graph = new please.SceneGraph();
     var second_collision_graph = new please.SceneGraph();
     ika.second_terrain_renderer = new ika.renderers.CollisionDataRenderer(prog, second_collision_graph, true);
+    ika.second_terrain_renderer.frequency = 12;
     ika.terrain_renderer = new ika.renderers.CollisionRenderer(
-        prog, collision_graph);    
+        prog, collision_graph);
 
     // add a handle for our player
     var player = ika.player = new please.GraphNode();
